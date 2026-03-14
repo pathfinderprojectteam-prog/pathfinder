@@ -17,6 +17,10 @@ app.use('/api/freelance-projects', require('./routes/freelanceProjectRoutes'));
 app.use('/api/scholarships', require('./routes/scholarshipRoutes'));
 app.use('/api/applications', require('./routes/applicationRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/conversations', require('./routes/messagingRoutes'));
+app.use('/api/messages', require('./routes/messagingRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
+
 
 app.get('/', (req, res) => {
   res.status(200).json({
