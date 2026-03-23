@@ -20,6 +20,7 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/conversations', require('./routes/messagingRoutes'));
 app.use('/api/messages', require('./routes/messagingRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/recommendations', require('./routes/recommendationRoutes'));
 
 
 app.get('/', (req, res) => {
