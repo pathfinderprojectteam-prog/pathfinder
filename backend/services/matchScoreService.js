@@ -8,10 +8,11 @@
  *
  * @param {Object} profile     – Populated student profile (skills, experiences, educations)
  * @param {Object} opportunity – Job, FreelanceProject, or Scholarship document
- * @returns {number} Score between 0 and 100
+ * @returns {Object} Object containing { score, reason }
  */
 const calculateMatchScore = (profile, opportunity) => {
   let score = 0;
+  const reasons = [];
 
   // ── 1. Skills Match (50 pts) ───────────────────────────────────────────────
   const profileSkills = (profile.skills || []).map((s) =>
@@ -28,6 +29,7 @@ const calculateMatchScore = (profile, opportunity) => {
 
   if (hasSkillMatch) {
     score += 50;
+    reasons.push('Skill match found');
   }
 
   // ── 2. Experience Match (30 pts) ──────────────────────────────────────────
@@ -40,14 +42,20 @@ const calculateMatchScore = (profile, opportunity) => {
 
   if (totalUserExperience >= requiredExperience) {
     score += 30;
+    reasons.push('Experience requirement satisfied');
   }
 
   // ── 3. Education Match (20 pts) ───────────────────────────────────────────
   if (profile.educations && profile.educations.length > 0) {
     score += 20;
+    reasons.push('Education background present');
   }
 
-  return score; // 0 – 100
+  return {
+    score,
+    reason: reasons.join(', '),
+  };
 };
 
 module.exports = { calculateMatchScore };
+

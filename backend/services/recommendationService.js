@@ -2,6 +2,7 @@ const Job = require('../models/Job');
 const FreelanceProject = require('../models/FreelanceProject');
 const Scholarship = require('../models/Scholarship');
 const { calculateMatchScore } = require('./matchScoreService');
+const { calculateProfileCompletion } = require('./profileCompletionService');
 
 const TOP_N = 10;
 const MIN_SCORE = 50;
@@ -13,13 +14,31 @@ const MIN_SCORE = 50;
  * @returns {Object[]} Top N opportunities with score attached, sorted descending
  */
 const rankOpportunities = (opportunities, profile) => {
+  const completion = calculateProfileCompletion(profile);
+
   return opportunities
     .map((opp) => {
       const plain = opp.toObject ? opp.toObject() : opp;
-      return { ...plain, score: calculateMatchScore(profile, plain) };
+      const result = calculateMatchScore(profile, plain);
+      
+      let finalScore = result.score;
+      let finalReason = result.reason;
+
+      if (completion < 50) {
+        finalScore = Math.max(0, finalScore - 20);
+        finalReason += finalReason 
+          ? ', Low profile completion affects recommendation' 
+          : 'Low profile completion affects recommendation';
+      }
+
+      return { 
+        ...plain, 
+        matchScore: finalScore, 
+        matchReason: finalReason 
+      };
     })
-    .filter((opp) => opp.score >= MIN_SCORE)
-    .sort((a, b) => b.score - a.score)
+    .filter((opp) => opp.matchScore >= MIN_SCORE)
+    .sort((a, b) => b.matchScore - a.matchScore)
     .slice(0, TOP_N);
 };
 
