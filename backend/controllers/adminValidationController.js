@@ -62,8 +62,26 @@ const validateScholarship = async (req, res) => {
   }
 };
 
+// @desc    Get all unvalidated items across all opportunity types
+// @route   GET /api/admin/pending
+// @access  Private (Admin)
+const getPendingItems = async (req, res) => {
+  try {
+    const [jobs, freelanceProjects, scholarships] = await Promise.all([
+      Job.find({ validated: false }).populate('company', 'name email').sort({ createdAt: -1 }),
+      FreelanceProject.find({ validated: false }).populate('client', 'name email').sort({ createdAt: -1 }),
+      Scholarship.find({ validated: false }).populate('university', 'name email').sort({ createdAt: -1 }),
+    ]);
+
+    res.json({ jobs, freelanceProjects, scholarships });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   validateJob,
   validateFreelanceProject,
   validateScholarship,
+  getPendingItems,
 };

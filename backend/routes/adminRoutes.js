@@ -4,9 +4,13 @@ const {
   validateJob,
   validateFreelanceProject,
   validateScholarship,
+  getPendingItems,
 } = require('../controllers/adminValidationController');
 const { protect } = require('../middleware/authMiddleware');
 const { allowRoles } = require('../middleware/roleMiddleware');
+
+// Admin-only GET routes
+router.get('/pending', protect, allowRoles('admin'), getPendingItems);
 
 // Admin-only validation routes
 router.put('/jobs/:jobId/validate', protect, allowRoles('admin'), validateJob);

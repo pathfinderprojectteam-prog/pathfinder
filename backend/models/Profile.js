@@ -14,6 +14,12 @@ const profileSchema = new mongoose.Schema(
     availability: {
       type: String,
     },
+    avatar: {
+      type: String,
+    },
+    cvFile: {
+      type: String,
+    },
     educations: [
       {
         type: mongoose.Schema.Types.ObjectId,

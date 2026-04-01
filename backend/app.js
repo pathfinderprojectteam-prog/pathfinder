@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const { errorHandler } = require('./middleware/errorHandler');
 
@@ -8,6 +9,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve uploaded files as static assets
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
@@ -22,6 +26,8 @@ app.use('/api/messages', require('./routes/messagingRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/recommendations', require('./routes/recommendationRoutes'));
 app.use('/api/cv', require('./routes/cvRoutes'));
+app.use('/api/upload', require('./routes/uploadRoutes'));
+
 
 
 app.get('/', (req, res) => {

@@ -7,7 +7,7 @@ const { calculateProfileCompletion } = require('../services/profileCompletionSer
 // @access  Private
 const createProfile = async (req, res) => {
   try {
-    const { bio, availability } = req.body;
+    const { bio, availability, avatar, cvFile } = req.body;
 
     const profileExists = await Profile.findOne({ user: req.user.id });
 
@@ -19,6 +19,8 @@ const createProfile = async (req, res) => {
       user: req.user.id,
       bio,
       availability,
+      avatar,
+      cvFile,
     });
 
     if (req.user.role === 'student') {
@@ -59,15 +61,15 @@ const getProfile = async (req, res) => {
 // @desc    Update user profile
 // @route   PUT /api/profiles
 // @access  Private
-const updateProfile = async (req, res) => {
-  try {
-    const { bio, availability } = req.body;
+    const { bio, availability, avatar, cvFile } = req.body;
 
     const profile = await Profile.findOne({ user: req.user.id });
 
     if (profile) {
-      profile.bio = bio || profile.bio;
-      profile.availability = availability || profile.availability;
+      profile.bio = bio !== undefined ? bio : profile.bio;
+      profile.availability = availability !== undefined ? availability : profile.availability;
+      profile.avatar = avatar !== undefined ? avatar : profile.avatar;
+      profile.cvFile = cvFile !== undefined ? cvFile : profile.cvFile;
 
       const updatedProfile = await profile.save();
 
