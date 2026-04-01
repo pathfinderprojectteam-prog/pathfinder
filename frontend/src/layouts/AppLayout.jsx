@@ -4,19 +4,49 @@ import { useAuth } from '../context/AuthContext';
 export default function AppLayout() {
   const { user, logout } = useAuth();
 
-  const navItems = [
-    { name: 'Dashboard', path: '/dashboard' },
-    { name: 'Profile', path: '/profile' },
-    { name: 'Jobs', path: '/jobs' },
-    { name: 'Freelance', path: '/freelance' },
-    { name: 'Scholarships', path: '/scholarships' },
-    { name: 'Applications', path: '/applications' },
-    { name: 'Messages', path: '/messages' },
-    { name: 'Notifications', path: '/notifications' },
-    { name: 'Recommendations', path: '/recommendations' },
-    { name: 'Career Path', path: '/career-path' },
-    { name: 'CV Generator', path: '/cv' },
-  ];
+  const role = user?.role || 'student';
+
+  // Define navigation matrices for different roles
+  const navigationMap = {
+    student: [
+      { name: 'Dashboard', path: '/dashboard' },
+      { name: 'Profile', path: '/profile' },
+      { name: 'Jobs', path: '/jobs' },
+      { name: 'Freelance', path: '/freelance' },
+      { name: 'Scholarships', path: '/scholarships' },
+      { name: 'Applications', path: '/applications' },
+      { name: 'Messages', path: '/messages' },
+      { name: 'Notifications', path: '/notifications' },
+      { name: 'Recommendations', path: '/recommendations' },
+      { name: 'Career Path', path: '/career-path' },
+      { name: 'CV Generator', path: '/cv' },
+    ],
+    company: [
+      { name: 'Dashboard', path: '/dashboard' },
+      { name: 'Profile', path: '/profile' },
+      { name: 'Messages', path: '/messages' },
+      { name: 'Notifications', path: '/notifications' },
+    ],
+    client: [
+      { name: 'Dashboard', path: '/dashboard' },
+      { name: 'Profile', path: '/profile' },
+      { name: 'Messages', path: '/messages' },
+      { name: 'Notifications', path: '/notifications' },
+    ],
+    university: [
+      { name: 'Dashboard', path: '/dashboard' },
+      { name: 'Profile', path: '/profile' },
+      { name: 'Messages', path: '/messages' },
+      { name: 'Notifications', path: '/notifications' },
+    ],
+    admin: [
+      { name: 'Dashboard', path: '/dashboard' },
+      { name: 'Messages', path: '/messages' },
+      { name: 'Notifications', path: '/notifications' },
+    ],
+  };
+
+  const navItems = navigationMap[role] || navigationMap.student;
 
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900">
@@ -31,7 +61,7 @@ export default function AppLayout() {
         
         <nav className="p-4 flex-1 flex flex-col gap-1 overflow-y-auto">
            <div className="text-slate-500 font-bold text-xs uppercase tracking-widest mt-4 mb-2 px-3">
-             Main Menu
+             Menu: {role}
            </div>
            
            {navItems.map((item) => (
@@ -59,7 +89,7 @@ export default function AppLayout() {
         <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-8 shadow-sm z-10">
           <div className="text-slate-500 font-medium text-sm flex items-center gap-2">
             <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-bold uppercase tracking-wide">
-              Sprint 5 Build
+              Sprint 6 Beta
             </span>
           </div>
           
