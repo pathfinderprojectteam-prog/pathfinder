@@ -2,151 +2,230 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { dataService } from '../../services/dataService';
 
-// difficulty options from the backend schema
-const DIFFICULTY_OPTIONS = ['Beginner', 'Intermediate', 'Advanced'];
-
 export default function ClientDashboard() {
   const { user } = useAuth();
-
-  // ── Create form state ──────────────────────────────────────────────────────
-  const [form, setForm] = useState({ title: '', description: '', difficulty: 'Beginner' });
-  const [submitting, setSubmitting] = useState(false);
-  const [formMsg, setFormMsg] = useState(null); // { type: 'success'|'error', text }
-
-  // ── My projects list state ─────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState('manage'); // 'manage' | 'post'
   const [projects, setProjects] = useState([]);
-  const [loadingProjects, setLoadingProjects] = useState(true);
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch validated projects and filter by owner client-side
-  useEffect(() => {
-    setLoadingProjects(true);
-    dataService.getAllFreelanceRaw()
-      .then(res => {
-        const all = Array.isArray(res.data) ? res.data : (res.data?.data || []);
-        setProjects(
-          all.filter(p => p.client?._id === user._id || p.client === user._id)
-        );
-      })
-      .catch(err => console.error('Error loading projects', err))
-      .finally(() => setLoadingProjects(false));
-  }, [user._id, refreshTrigger]);
+  const [projectForm, setProjectForm] = useState({
+    title: '', description: '', difficulty: 'Beginner', requiredSkills: ''
+  });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editId, setEditId] = useState(null);
 
-  const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setFormMsg(null);
-    setSubmitting(true);
+  const fetchProjects = async () => {
+    setLoading(true);
     try {
-      await dataService.createFreelanceProject(form);
-      setFormMsg({ type: 'success', text: `"${form.title}" submitted. Awaiting admin validation.` });
-      setForm({ title: '', description: '', difficulty: 'Beginner' });
-      setRefreshTrigger(t => t + 1);
+      const res = await dataService.getClientProjects(); 
+      setProjects(res.data.data || res.data || []);
     } catch (err) {
-      setFormMsg({ type: 'error', text: err.response?.data?.message || 'Submission failed.' });
+      console.error('Failed to fetch freelance projects', err);
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
+  useEffect(() => { fetchProjects(); }, []);
+
+  const handlePostProject = async (e) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        ...projectForm,
+        requiredSkills: typeof projectForm.requiredSkills === 'string'
+          ? projectForm.requiredSkills.split(',').map(s => s.trim()).filter(Boolean)
+          : projectForm.requiredSkills
+      };
+
+      if (isEditing) {
+        await dataService.updateFreelanceProject(editId, payload);
+        alert('Project updated and resubmitted for validation!');
+      } else {
+        await dataService.postFreelanceProject(payload);
+        alert('Freelance project posted pending admin validation!');
+      }
+
+      setProjectForm({ title: '', description: '', difficulty: 'Beginner', requiredSkills: '' });
+      setIsEditing(false);
+      setEditId(null);
+      setActiveTab('manage');
+      fetchProjects();
+    } catch (err) {
+      alert('Failed to save project.');
+      console.error(err);
+    }
+  };
+
+  const startEdit = (project) => {
+    setProjectForm({
+      title: project.title,
+      description: project.description,
+      difficulty: project.difficulty,
+      requiredSkills: Array.isArray(project.requiredSkills) ? project.requiredSkills.join(', ') : project.requiredSkills
+    });
+    setEditId(project._id);
+    setIsEditing(true);
+    setActiveTab('post');
+  };
+
   return (
-    <div className="max-w-4xl flex flex-col gap-8">
-      <div>
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Client Dashboard</h1>
-        <p className="text-slate-500 mt-1">
-          Welcome, <span className="font-bold text-slate-700">{user?.name}</span>. Post and manage your freelance projects.
-        </p>
-      </div>
-
-      {/* ── Create Project Form ── */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-        <h2 className="text-lg font-bold text-slate-900 mb-4">Post a New Freelance Project</h2>
-
-        {formMsg && (
-          <div className={`mb-4 p-3 text-sm rounded border-l-4 ${
-            formMsg.type === 'success'
-              ? 'bg-emerald-50 border-emerald-500 text-emerald-700'
-              : 'bg-rose-50 border-rose-500 text-rose-700'
-          }`}>
-            {formMsg.text}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Project Title *</label>
-            <input
-              name="title" required value={form.title} onChange={handleChange}
-              placeholder="e.g. Build a REST API"
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Description *</label>
-            <textarea
-              name="description" required rows={3} value={form.description} onChange={handleChange}
-              placeholder="Describe the scope, deliverables, and timeline..."
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Difficulty Level</label>
-            <select
-              name="difficulty" value={form.difficulty} onChange={handleChange}
-              className="w-full border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
-            >
-              {DIFFICULTY_OPTIONS.map(d => <option key={d}>{d}</option>)}
-            </select>
-          </div>
-
-          <div className="flex justify-end">
-            <button
-              type="submit" disabled={submitting}
-              className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold rounded-lg text-sm transition-colors"
-            >
-              {submitting ? 'Submitting...' : 'Post Project'}
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* ── My Projects List ── */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
-          <h2 className="text-lg font-bold text-slate-900">My Projects</h2>
-          <span className="text-xs text-slate-500 italic">Only validated listings shown</span>
+    <div className="max-w-6xl mx-auto flex flex-col gap-8 pb-10">
+      
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+            Client Portal
+          </h1>
+          <p className="text-slate-500 mt-1 font-medium">
+            Welcome back, {user?.name}. Manage your independent contractors.
+          </p>
         </div>
-
-        {loadingProjects ? (
-          <p className="p-6 text-slate-500 text-sm animate-pulse">Loading projects...</p>
-        ) : projects.length === 0 ? (
-          <div className="p-10 text-center border-2 border-dashed border-slate-200 m-4 rounded-xl">
-            <p className="text-slate-400 font-medium">No validated projects yet.</p>
-            <p className="text-slate-400 text-sm mt-1">New posts require admin approval before appearing here.</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {projects.map(proj => (
-              <div key={proj._id} className="px-6 py-4 flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="font-bold text-slate-900">{proj.title}</h3>
-                  <p className="text-sm text-slate-500 mt-0.5 line-clamp-2">{proj.description}</p>
-                </div>
-                <span className={`shrink-0 px-2 py-1 text-xs font-bold rounded-md border ${
-                  proj.difficulty === 'Advanced' ? 'bg-rose-50 text-rose-700 border-rose-100'
-                  : proj.difficulty === 'Intermediate' ? 'bg-amber-50 text-amber-700 border-amber-100'
-                  : 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                }`}>
-                  {proj.difficulty}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
+        
+        <div className="bg-slate-100 p-1.5 rounded-xl flex border border-slate-200 self-start">
+          <button 
+            onClick={() => {
+              setActiveTab('manage');
+              setIsEditing(false);
+              setProjectForm({ title: '', description: '', difficulty: 'Beginner', requiredSkills: '' });
+            }}
+            className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'manage' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Manage Contracts
+          </button>
+          <button 
+            onClick={() => {
+              setActiveTab('post');
+              setIsEditing(false);
+              setProjectForm({ title: '', description: '', difficulty: 'Beginner', requiredSkills: '' });
+            }}
+            className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'post' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+          >
+            Post Mission
+          </button>
+        </div>
       </div>
+
+      {activeTab === 'post' && (
+        <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm">
+          <h2 className="text-xl font-black text-slate-900 mb-6">{isEditing ? 'Edit Freelance Mission' : 'Draft a New Freelance Mission'}</h2>
+          <form onSubmit={handlePostProject} className="space-y-6 max-w-2xl">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Project Title</label>
+              <input 
+                type="text" required value={projectForm.title} onChange={e => setProjectForm({...projectForm, title: e.target.value})}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                placeholder="e.g. Develop a React Navigation System"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Scope & Details</label>
+              <textarea 
+                required rows="4" value={projectForm.description} onChange={e => setProjectForm({...projectForm, description: e.target.value})}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
+                placeholder="Describe the deliverables..."
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Difficulty Level</label>
+                <select 
+                  required value={projectForm.difficulty} onChange={e => setProjectForm({...projectForm, difficulty: e.target.value})}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-white"
+                >
+                  <option value="Beginner">Beginner</option>
+                  <option value="Intermediate">Intermediate</option>
+                  <option value="Advanced">Advanced</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Required Skills (Comma sep)</label>
+                <input 
+                  type="text" required value={projectForm.requiredSkills} onChange={e => setProjectForm({...projectForm, requiredSkills: e.target.value})}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  placeholder="Vue, Figma, SEO"
+                />
+              </div>
+            </div>
+            <div className="pt-4">
+              <button type="submit" className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl shadow-lg transition-transform active:scale-95">
+                {isEditing ? 'Save Changes' : 'Publish Mission'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {activeTab === 'manage' && (
+        <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm min-h-[400px]">
+           <h2 className="text-xl font-black text-slate-900 mb-6">Active Contracts</h2>
+           {loading ? (
+             <div className="text-slate-500 font-medium animate-pulse">Loading active projects...</div>
+           ) : projects.length === 0 ? (
+             <div className="text-center py-16 border-2 border-dashed border-slate-200 rounded-2xl">
+               <span className="block text-slate-400 font-bold text-lg mb-2">No Active Missions</span>
+               <p className="text-slate-500 text-sm">Post a mission to interact with freelance talent.</p>
+             </div>
+           ) : (
+             <div className="grid gap-4">
+               {projects.map(project => (
+                 <div key={project._id} className="border border-slate-100 rounded-2xl p-6 bg-slate-50 flex flex-col transition-all hover:border-slate-200 hover:shadow-sm">
+                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                     <div>
+                       <div className="flex items-center gap-3 mb-1">
+                         <h3 className="font-black text-slate-900 text-lg">{project.title}</h3>
+                         <span className="px-2.5 py-0.5 bg-slate-200 text-slate-700 text-[10px] font-black uppercase tracking-widest rounded-md">
+                           {project.difficulty}
+                         </span>
+                         <span className={`px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest rounded-md border 
+                          ${project.status === 'validated' ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 
+                            project.status === 'changes_requested' ? 'bg-amber-100 text-amber-800 border-amber-200' : 
+                            project.status === 'rejected' ? 'bg-rose-100 text-rose-800 border-rose-200' :
+                            'bg-slate-100 text-slate-800 border-slate-200'}`}
+                        >
+                          {project.status === 'validated' ? 'Validated' : 
+                           project.status === 'changes_requested' ? 'Changes Requested' : 
+                           project.status === 'rejected' ? 'Rejected' : 'Pending Review'}
+                        </span>
+                       </div>
+                       <p className="text-slate-500 text-sm font-medium line-clamp-1">{project.description}</p>
+                     </div>
+                     
+                     <div className="flex items-center gap-3 shrink-0">
+                       <button 
+                        onClick={() => startEdit(project)}
+                        className="px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors shadow-sm"
+                       >
+                         Edit
+                       </button>
+                       <button className="px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors shadow-sm">
+                         Review Work
+                       </button>
+                     </div>
+                   </div>
+
+                   {project.status === 'changes_requested' && project.feedbackMessage && (
+                    <div className="mt-2 p-4 bg-amber-50 border border-amber-100 rounded-xl">
+                      <div className="text-[10px] font-black text-amber-800 uppercase tracking-widest mb-1 flex items-center gap-1">
+                        <span>Admin Feedback</span>
+                        <div className="w-1 h-1 bg-amber-800 rounded-full animate-pulse" />
+                      </div>
+                      <p className="text-amber-900 text-xs font-medium leading-relaxed italic">
+                        "{project.feedbackMessage}"
+                      </p>
+                    </div>
+                  )}
+
+                   <div className="mt-3 border-t pt-3 border-slate-200/50">
+                      <span className="font-bold text-slate-500 text-[10px] uppercase mr-2">Submissions:</span>
+                      <span className="font-black text-indigo-600 text-xs">{project.submissions?.length || 0}</span>
+                   </div>
+                 </div>
+               ))}
+             </div>
+           )}
+        </div>
+      )}
     </div>
   );
 }

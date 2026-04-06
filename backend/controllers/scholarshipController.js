@@ -1,4 +1,5 @@
 const Scholarship = require('../models/Scholarship');
+const University = require('../models/University');
 
 // @desc    Create a scholarship
 // @route   POST /api/scholarships
@@ -13,12 +14,16 @@ const createScholarship = async (req, res) => {
         .json({ message: 'Please provide title, academicLevelRequired and deadline' });
     }
 
+    if (req.user.role !== 'University') {
+      return res.status(403).json({ message: 'Only universities can post scholarships.' });
+    }
+
     const scholarship = await Scholarship.create({
       title,
       academicLevelRequired,
       deadline,
       university: req.user.id,
-      validated: false,
+      status: 'pending',
     });
 
     res.status(201).json(scholarship);
@@ -32,7 +37,7 @@ const createScholarship = async (req, res) => {
 // @access  Public
 const getAllScholarships = async (req, res) => {
   try {
-    const scholarships = await Scholarship.find({ validated: true })
+    const scholarships = await Scholarship.find({ status: 'validated' })
       .populate('university', 'name email accreditation country')
       .sort({ createdAt: -1 });
 
@@ -86,6 +91,10 @@ const updateScholarship = async (req, res) => {
     scholarship.academicLevelRequired =
       academicLevelRequired || scholarship.academicLevelRequired;
     scholarship.deadline = deadline || scholarship.deadline;
+
+    // Reset status for re-validation and clear feedback
+    scholarship.status = 'pending';
+    scholarship.feedbackMessage = '';
 
     const updatedScholarship = await scholarship.save();
 

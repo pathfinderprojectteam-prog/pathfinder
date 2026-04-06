@@ -10,6 +10,18 @@ const applicationSchema = new mongoose.Schema(
     job: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Job',
+    },
+    freelanceProject: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'FreelanceProject',
+    },
+    scholarship: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Scholarship',
+    },
+    type: {
+      type: String,
+      enum: ['job', 'freelance', 'scholarship'],
       required: true,
     },
     status: {
@@ -23,8 +35,8 @@ const applicationSchema = new mongoose.Schema(
   }
 );
 
-// Compound unique index to prevent duplicate applications
-applicationSchema.index({ student: 1, job: 1 }, { unique: true });
+// We want to ensure a student can't apply twice to the same job, project, or scholarship
+// But they can have multiple applications for different jobs.
 
 const Application = mongoose.model('Application', applicationSchema);
 

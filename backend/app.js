@@ -10,6 +10,15 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Request Logger for Proof-Based Debugging
+app.use((req, res, next) => {
+  console.log(`\n[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  if (Object.keys(req.body).length > 0) {
+    console.log('📥 Body:', JSON.stringify(req.body, null, 2));
+  }
+  next();
+});
+
 // Serve uploaded files as static assets
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -21,12 +30,12 @@ app.use('/api/freelance-projects', require('./routes/freelanceProjectRoutes'));
 app.use('/api/scholarships', require('./routes/scholarshipRoutes'));
 app.use('/api/applications', require('./routes/applicationRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
-app.use('/api/conversations', require('./routes/messagingRoutes'));
-app.use('/api/messages', require('./routes/messagingRoutes'));
+app.use('/api', require('./routes/messagingRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/recommendations', require('./routes/recommendationRoutes'));
 app.use('/api/cv', require('./routes/cvRoutes'));
 app.use('/api/upload', require('./routes/uploadRoutes'));
+app.use('/api/network', require('./routes/networkRoutes'));
 
 
 

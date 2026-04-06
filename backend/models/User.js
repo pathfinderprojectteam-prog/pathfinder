@@ -20,11 +20,12 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: ['student', 'client', 'company', 'university', 'admin'],
+      enum: ['Student', 'Client', 'Company', 'University', 'Admin'],
     },
   },
   {
     timestamps: true,
+    discriminatorKey: 'role',
   }
 );
 

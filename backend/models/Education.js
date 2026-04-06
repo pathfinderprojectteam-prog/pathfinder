@@ -16,6 +16,12 @@ const educationSchema = new mongoose.Schema(
     field: {
       type: String,
     },
+    yearOfGraduation: {
+      type: Number,
+    },
+    gpa: {
+      type: String,
+    },
     startDate: {
       type: Date,
     },

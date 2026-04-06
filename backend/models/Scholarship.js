@@ -14,14 +14,23 @@ const scholarshipSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    requiredSkills: [
+      {
+        type: String,
+      },
+    ],
     university: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'University',
       required: true,
     },
-    validated: {
-      type: Boolean,
-      default: false,
+    status: {
+      type: String,
+      enum: ['pending', 'validated', 'rejected', 'changes_requested'],
+      default: 'pending',
+    },
+    feedbackMessage: {
+      type: String,
     },
   },
   {

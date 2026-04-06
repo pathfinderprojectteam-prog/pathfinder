@@ -27,6 +27,6 @@ const studentSchema = new mongoose.Schema(
 );
 
 // We define the discriminator on the base User model, passing a name ('Student') and the schema.
-const Student = User.discriminator('student', studentSchema);
+const Student = User.discriminator('Student', studentSchema);
 
 module.exports = Student;

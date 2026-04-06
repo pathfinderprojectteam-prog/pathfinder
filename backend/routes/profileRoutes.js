@@ -5,16 +5,14 @@ const {
   getProfile,
   updateProfile,
   deleteProfile,
+  updateChosenPath,
 } = require('../controllers/profileController');
 const { protect } = require('../middleware/authMiddleware');
-const { allowRoles } = require('../middleware/roleMiddleware');
 
-// Define routes
-router
-  .route('/')
-  .post(protect, allowRoles('student'), createProfile)
-  .get(protect, allowRoles('student'), getProfile)
-  .put(protect, allowRoles('student'), updateProfile)
-  .delete(protect, allowRoles('student'), deleteProfile);
+router.get('/', protect, getProfile);
+router.post('/', protect, createProfile);
+router.put('/', protect, updateProfile);
+router.delete('/', protect, deleteProfile);
+router.put('/chosen-path', protect, updateChosenPath);
 
 module.exports = router;

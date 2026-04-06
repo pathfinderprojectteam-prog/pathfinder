@@ -8,8 +8,12 @@ const { suggestCareerPath } = require('../services/careerPathService');
 
 // Helper to fetch the authenticated student's profile
 const getStudentProfile = async (userId, res) => {
-  // 'user' field in Profile schema holds the reference
-  const profile = await Profile.findOne({ user: userId });
+  // Populate profile for scoring accuracy
+  const profile = await Profile.findOne({ user: userId })
+    .populate('educations')
+    .populate('skills')
+    .populate('experiences');
+
   if (!profile) {
     res.status(404).json({ message: 'Profile not found. Please complete your profile.' });
     return null;
@@ -70,7 +74,7 @@ const getCareerPath = async (req, res) => {
     const profile = await getStudentProfile(req.user.id, res);
     if (!profile) return;
 
-    const path = suggestCareerPath(profile);
+    const path = await suggestCareerPath(profile);
     res.json({ careerPath: path });
   } catch (error) {
     res.status(500).json({ message: error.message });

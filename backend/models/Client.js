@@ -10,6 +10,6 @@ const clientSchema = new mongoose.Schema({
   },
 });
 
-const Client = User.discriminator('client', clientSchema);
+const Client = User.discriminator('Client', clientSchema);
 
 module.exports = Client;

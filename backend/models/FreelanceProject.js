@@ -12,16 +12,26 @@ const freelanceProjectSchema = new mongoose.Schema(
     },
     difficulty: {
       type: String,
-      enum: ['easy', 'medium', 'hard'],
+      enum: ['Beginner', 'Intermediate', 'Advanced'],
+      default: 'Beginner',
     },
+    requiredSkills: [
+      {
+        type: String,
+      },
+    ],
     client: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Client',
       required: true,
     },
-    validated: {
-      type: Boolean,
-      default: false,
+    status: {
+      type: String,
+      enum: ['pending', 'validated', 'rejected', 'changes_requested'],
+      default: 'pending',
+    },
+    feedbackMessage: {
+      type: String,
     },
   },
   {

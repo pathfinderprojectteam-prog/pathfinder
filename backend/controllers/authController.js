@@ -6,6 +6,7 @@ const University = require('../models/University');
 const Admin = require('../models/Admin');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const { insertUserIntoGorse } = require('../services/recommendationService');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -15,7 +16,8 @@ const generateToken = (id) => {
 
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role, ...otherDetails } = req.body;
+    const { name, email, password, role: rawRole, ...otherDetails } = req.body;
+    const role = rawRole ? rawRole.charAt(0).toUpperCase() + rawRole.slice(1).toLowerCase() : null;
 
     if (!name || !email || !password || !role) {
       return res.status(400).json({ message: 'Please provide all required fields' });
@@ -30,19 +32,21 @@ const registerUser = async (req, res) => {
     let user;
 
     switch (role) {
-      case 'student':
+      case 'Student':
         user = await Student.create({ name, email, password, role, ...otherDetails });
+        // Sync new student to Gorse recommender
+        insertUserIntoGorse(user._id, { skills: [] }).catch(err => console.warn('Gorse sync failed:', err.message));
         break;
-      case 'client':
+      case 'Client':
         user = await Client.create({ name, email, password, role, ...otherDetails });
         break;
-      case 'company':
+      case 'Company':
         user = await Company.create({ name, email, password, role, ...otherDetails });
         break;
-      case 'university':
+      case 'University':
         user = await University.create({ name, email, password, role, ...otherDetails });
         break;
-      case 'admin':
+      case 'Admin':
         user = await Admin.create({ name, email, password, role, ...otherDetails });
         break;
       default:

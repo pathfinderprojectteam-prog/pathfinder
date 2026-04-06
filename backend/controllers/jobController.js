@@ -1,4 +1,5 @@
 const Job = require('../models/Job');
+const Company = require('../models/Company');
 
 // @desc    Create a job
 // @route   POST /api/jobs
@@ -11,12 +12,16 @@ const createJob = async (req, res) => {
       return res.status(400).json({ message: 'Please provide title and description' });
     }
 
+    if (req.user.role !== 'Company') {
+      return res.status(403).json({ message: 'Only companies can post jobs.' });
+    }
+
     const job = await Job.create({
       title,
       description,
       requiredExperience,
       company: req.user.id,
-      validated: false,
+      status: 'pending',
     });
 
     res.status(201).json(job);
@@ -30,7 +35,7 @@ const createJob = async (req, res) => {
 // @access  Public
 const getAllJobs = async (req, res) => {
   try {
-    const jobs = await Job.find({ validated: true })
+    const jobs = await Job.find({ status: 'validated' })
       .populate('company', 'name email industry')
       .sort({ createdAt: -1 });
 
@@ -82,6 +87,10 @@ const updateJob = async (req, res) => {
     job.description = description || job.description;
     job.requiredExperience =
       requiredExperience !== undefined ? requiredExperience : job.requiredExperience;
+
+    // Reset status for re-validation and clear feedback
+    job.status = 'pending';
+    job.feedbackMessage = '';
 
     const updatedJob = await job.save();
 

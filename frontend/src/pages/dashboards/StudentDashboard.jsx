@@ -39,19 +39,44 @@ function ProfileCompletionCard({ completion }) {
 }
 
 // ─── Career Path Widget ───────────────────────────────────────────────────────
-function CareerPathCard({ path }) {
+function CareerPathCard({ path, isChosen, onAccept }) {
   const meta = PATH_LABELS[path] ?? PATH_LABELS['complete_profile'];
+  const [submitting, setSubmitting] = useState(false);
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-      <h2 className="text-base font-bold text-slate-900 mb-3">AI Career Suggestion</h2>
+      <div className="flex items-center justify-between mb-3">
+         <h2 className="text-base font-bold text-slate-900">AI Career Suggestion</h2>
+         {isChosen && (
+            <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-black uppercase tracking-widest border border-emerald-200">
+              Path Committed
+            </span>
+         )}
+      </div>
+      
       <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border font-bold text-sm ${meta.color}`}>
         {meta.label}
       </div>
       <p className="text-sm text-slate-500 mt-3 leading-relaxed">{meta.desc}</p>
-      <Link to="/career-path" className="inline-block mt-3 text-xs font-bold text-indigo-600 hover:underline">
-        View full trajectory →
-      </Link>
+      
+      <div className="mt-4 flex items-center justify-between">
+        <Link to="/career-path" className="text-xs font-bold text-indigo-600 hover:underline">
+          View full trajectory →
+        </Link>
+        {!isChosen && path !== 'complete_profile' && (
+          <button 
+            disabled={submitting}
+            onClick={async () => {
+              setSubmitting(true);
+              await onAccept(path);
+              setSubmitting(false);
+            }}
+            className="text-xs px-3 py-1.5 bg-slate-900 text-white font-bold rounded-lg hover:bg-indigo-600 transition-all disabled:bg-slate-300"
+          >
+            {submitting ? 'Updating...' : 'Accept Suggestion'}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -76,7 +101,6 @@ function RecommendedJobsCard({ jobs }) {
       <div className="flex flex-col gap-3">
         {jobs.slice(0, 3).map((job, idx) => (
           <div key={job._id ?? idx} className="border border-slate-100 rounded-lg p-4 bg-slate-50 relative">
-            {/* Match score badge */}
             {job.matchScore != null && (
               <span className="absolute top-3 right-3 bg-indigo-600 text-white text-xs font-black px-2 py-0.5 rounded-md">
                 {job.matchScore}%
@@ -109,10 +133,10 @@ function NotificationsCard({ notifications }) {
             <li
               key={n._id ?? idx}
               className={`flex items-start gap-3 p-3 rounded-lg border text-sm ${
-                n.isRead ? 'bg-white border-slate-100 text-slate-500' : 'bg-indigo-50 border-indigo-100 text-slate-800 font-medium'
+                n.read ? 'bg-white border-slate-100 text-slate-500' : 'bg-indigo-50 border-indigo-100 text-slate-800 font-medium'
               }`}
             >
-              <span className={`mt-1 shrink-0 w-2 h-2 rounded-full ${n.isRead ? 'bg-slate-300' : 'bg-indigo-500'}`} />
+              <span className={`mt-1 shrink-0 w-2 h-2 rounded-full ${n.read ? 'bg-slate-300' : 'bg-indigo-500'}`} />
               <span className="leading-snug">{n.message}</span>
             </li>
           ))}
@@ -124,7 +148,7 @@ function NotificationsCard({ notifications }) {
 
 // ─── Generate CV Quick Action ─────────────────────────────────────────────────
 function GenerateCVButton() {
-  const [status, setStatus] = useState(null); // null | 'loading' | 'success' | 'error'
+  const [status, setStatus] = useState(null);
 
   const handleGenerate = async () => {
     setStatus('loading');
@@ -141,21 +165,11 @@ function GenerateCVButton() {
     <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex items-center justify-between gap-4">
       <div>
         <h2 className="text-base font-bold text-slate-900">Quick Action</h2>
-        <p className="text-sm text-slate-500 mt-0.5">
-          Let the AI assemble your profile data into a full CV export.
-        </p>
-        {status === 'success' && (
-          <p className="text-xs text-emerald-600 font-bold mt-1">✓ CV generated. <Link to="/cv" className="underline">View it →</Link></p>
-        )}
-        {status === 'error' && (
-          <p className="text-xs text-rose-600 font-bold mt-1">Failed. Ensure your profile has data.</p>
-        )}
+        <p className="text-sm text-slate-500 mt-0.5"> Let the AI assemble your profile data into a full CV. </p>
+        {status === 'success' && <p className="text-xs text-emerald-600 font-bold mt-1">✓ CV generated.</p>}
+        {status === 'error' && <p className="text-xs text-rose-600 font-bold mt-1">Failed. Ensure your profile has data.</p>}
       </div>
-      <button
-        onClick={handleGenerate}
-        disabled={status === 'loading'}
-        className="shrink-0 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold text-sm rounded-lg transition-colors shadow-sm"
-      >
+      <button onClick={handleGenerate} disabled={status === 'loading'} className="shrink-0 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold text-sm rounded-lg transition-colors shadow-sm">
         {status === 'loading' ? 'Generating...' : 'Generate CV'}
       </button>
     </div>
@@ -165,9 +179,9 @@ function GenerateCVButton() {
 // ─── Main StudentDashboard ────────────────────────────────────────────────────
 export default function StudentDashboard() {
   const { user } = useAuth();
-
   const [completion, setCompletion] = useState(null);
   const [careerPath, setCareerPath] = useState(null);
+  const [chosenPath, setChosenPath] = useState(null);
   const [jobs, setJobs] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -179,39 +193,40 @@ export default function StudentDashboard() {
       dataService.getRecommendedJobs().catch(() => ({ data: [] })),
       dataService.getNotifications().catch(() => ({ data: [] })),
     ]).then(([profileRes, pathRes, jobsRes, notifRes]) => {
-      // profileCompletion is on the user model (student discriminator)
       setCompletion(profileRes.data?.profileCompletion ?? 0);
       setCareerPath(pathRes.data?.careerPath ?? 'complete_profile');
+      setChosenPath(pathRes.data?.chosenPath ?? null);
       setJobs(Array.isArray(jobsRes.data) ? jobsRes.data : []);
       const notifData = notifRes.data;
       setNotifications(Array.isArray(notifData) ? notifData : (notifData?.data ?? []));
     }).finally(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return <div className="p-8 text-slate-500 animate-pulse font-medium">Loading your dashboard...</div>;
-  }
+  const handleAcceptPath = async (path) => {
+    try {
+      await dataService.updateChosenPath(path);
+      setChosenPath(path);
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to lock in path.');
+    }
+  };
+
+  if (loading) return <div className="p-8 text-slate-500 animate-pulse font-medium">Loading your dashboard...</div>;
 
   return (
     <div className="max-w-5xl flex flex-col gap-6">
-      {/* Greeting */}
       <div>
-        <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-          Welcome back, {user?.name?.split(' ')[0] ?? 'Student'}.
-        </h1>
+        <h1 className="text-3xl font-black text-slate-900 tracking-tight"> Welcome back, {user?.name?.split(' ')[0] ?? 'Student'}. </h1>
         <p className="text-slate-500 mt-1">Here is your PathFinder overview for today.</p>
       </div>
 
-      {/* Row 1: Profile Completion + Career Path */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <ProfileCompletionCard completion={completion} />
-        <CareerPathCard path={careerPath} />
+        <CareerPathCard path={chosenPath || careerPath} isChosen={!!chosenPath} onAccept={handleAcceptPath} />
       </div>
 
-      {/* Row 2: Recommended Jobs (full width) */}
       <RecommendedJobsCard jobs={jobs} />
 
-      {/* Row 3: Notifications + Generate CV */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <NotificationsCard notifications={notifications} />
         <GenerateCVButton />

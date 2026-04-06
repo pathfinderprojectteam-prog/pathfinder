@@ -6,7 +6,7 @@ export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'student' });
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', role: 'Student' });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -84,10 +84,10 @@ export default function Register() {
                  className="appearance-none bg-white rounded-lg relative block w-full px-4 py-3 border border-slate-300 placeholder-slate-400 text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm transition-all shadow-sm cursor-pointer"
                  value={formData.role} onChange={handleChange}
                 >
-                 <option value="student">Student / Candidate</option>
-                 <option value="company">Employer / Company</option>
-                 <option value="client">Freelance Client</option>
-                 <option value="university">University Administrator</option>
+                 <option value="Student">Student / Candidate</option>
+                 <option value="Company">Employer / Company</option>
+                 <option value="Client">Freelance Client</option>
+                 <option value="University">University Administrator</option>
                </select>
             </div>
           </div>

@@ -5,6 +5,7 @@ const {
   getUserConversations,
   sendMessage,
   getConversationMessages,
+  markMessagesAsRead,
 } = require('../controllers/messagingController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -14,6 +15,7 @@ router.use(protect);
 // Conversation routes
 router.post('/conversations', createConversation);
 router.get('/conversations', getUserConversations);
+router.put('/conversations/:conversationId/read', markMessagesAsRead);
 
 // Message routes
 router.post('/messages', sendMessage);

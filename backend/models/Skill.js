@@ -14,6 +14,9 @@ const skillSchema = new mongoose.Schema(
     level: {
       type: String,
     },
+    yearsExperience: {
+      type: Number,
+    },
   },
   {
     timestamps: true,

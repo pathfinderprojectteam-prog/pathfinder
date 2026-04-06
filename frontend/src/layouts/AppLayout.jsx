@@ -4,11 +4,11 @@ import { useAuth } from '../context/AuthContext';
 export default function AppLayout() {
   const { user, logout } = useAuth();
 
-  const role = user?.role || 'student';
+  const role = user?.role || 'Student';
 
   // Define navigation matrices for different roles
   const navigationMap = {
-    student: [
+    Student: [
       { name: 'Dashboard', path: '/dashboard' },
       { name: 'Profile', path: '/profile' },
       { name: 'Jobs', path: '/jobs' },
@@ -21,32 +21,32 @@ export default function AppLayout() {
       { name: 'Career Path', path: '/career-path' },
       { name: 'CV Generator', path: '/cv' },
     ],
-    company: [
+    Company: [
       { name: 'Dashboard', path: '/dashboard' },
       { name: 'Profile', path: '/profile' },
       { name: 'Messages', path: '/messages' },
       { name: 'Notifications', path: '/notifications' },
     ],
-    client: [
+    Client: [
       { name: 'Dashboard', path: '/dashboard' },
       { name: 'Profile', path: '/profile' },
       { name: 'Messages', path: '/messages' },
       { name: 'Notifications', path: '/notifications' },
     ],
-    university: [
+    University: [
       { name: 'Dashboard', path: '/dashboard' },
       { name: 'Profile', path: '/profile' },
       { name: 'Messages', path: '/messages' },
       { name: 'Notifications', path: '/notifications' },
     ],
-    admin: [
+    Admin: [
       { name: 'Dashboard', path: '/dashboard' },
       { name: 'Messages', path: '/messages' },
       { name: 'Notifications', path: '/notifications' },
     ],
   };
 
-  const navItems = navigationMap[role] || navigationMap.student;
+  const navItems = navigationMap[role] || navigationMap.Student;
 
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900">
@@ -89,7 +89,7 @@ export default function AppLayout() {
         <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-8 shadow-sm z-10">
           <div className="text-slate-500 font-medium text-sm flex items-center gap-2">
             <span className="px-2 py-1 bg-slate-100 text-slate-600 rounded-md text-xs font-bold uppercase tracking-wide">
-              Sprint 6 Beta
+              PRODUCTION v1.0
             </span>
           </div>
           

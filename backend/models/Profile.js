@@ -11,15 +11,18 @@ const profileSchema = new mongoose.Schema(
     bio: {
       type: String,
     },
-    availability: {
-      type: String,
-    },
     avatar: {
       type: String,
     },
-    cvFile: {
+    phone: {
       type: String,
     },
+    location: {
+      city: String,
+      country: String,
+      address: String,
+    },
+    // --- Student Specific ---
     educations: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -38,6 +41,45 @@ const profileSchema = new mongoose.Schema(
         ref: 'ProfessionalExperience',
       },
     ],
+    careerObjective: {
+      targetJobTitle: String,
+      preferredWorkType: String,
+      desiredSalary: String,
+      industries: [String],
+    },
+    cvFile: {
+      type: String,
+    },
+    availability: {
+      type: String,
+    },
+    
+    // --- Company & Client Specific ---
+    industry: {
+      type: String,
+    },
+    companyName: {
+      type: String,
+    },
+    companySize: {
+      type: String,
+    },
+    website: {
+      type: String,
+    },
+    foundedDate: {
+      type: Date,
+    },
+    
+    // --- University Specific ---
+    institutionType: {
+      type: String,
+      enum: ['Public', 'Private', 'Specialized'],
+    },
+    programs: [String],
+    accreditation: {
+      type: String,
+    },
   },
   {
     timestamps: true,

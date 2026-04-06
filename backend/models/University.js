@@ -10,6 +10,6 @@ const universitySchema = new mongoose.Schema({
   },
 });
 
-const University = User.discriminator('university', universitySchema);
+const University = User.discriminator('University', universitySchema);
 
 module.exports = University;

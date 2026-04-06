@@ -1,40 +1,68 @@
 const Application = require('../models/Application');
 const Job = require('../models/Job');
+const FreelanceProject = require('../models/FreelanceProject');
+const Scholarship = require('../models/Scholarship');
+const Notification = require('../models/Notification');
 
-// @desc    Apply to a job
-// @route   POST /api/applications
+// @desc    Apply to a job, project or scholarship
+// @route   POST /api/applications/:type/:id
 // @access  Private (Student)
-const applyToJob = async (req, res) => {
+const applyToOpportunity = async (req, res) => {
   try {
-    const jobId = req.params.jobId || req.body.jobId;
+    const { type, id } = req.params;
 
-    if (!jobId) {
-      return res.status(400).json({ message: 'Please provide jobId' });
+    if (!['job', 'freelance', 'scholarship'].includes(type)) {
+      return res.status(400).json({ message: 'Invalid application type' });
     }
 
-    const job = await Job.findById(jobId);
+    let opportunity;
+    let ownerField;
+    let modelField;
 
-    if (!job) {
-      return res.status(404).json({ message: 'Job not found' });
+    if (type === 'job') {
+      opportunity = await Job.findById(id);
+      ownerField = 'company';
+      modelField = 'job';
+    } else if (type === 'freelance') {
+      opportunity = await FreelanceProject.findById(id);
+      ownerField = 'client';
+      modelField = 'freelanceProject';
+    } else if (type === 'scholarship') {
+      opportunity = await Scholarship.findById(id);
+      ownerField = 'university';
+      modelField = 'scholarship';
     }
 
-    if (!job.validated) {
-      return res.status(400).json({ message: 'This job is not available for applications' });
+    if (!opportunity) {
+      return res.status(404).json({ message: `${type} not found` });
     }
 
-    // Check for duplicate application (compound index will also enforce this)
-    const alreadyApplied = await Application.findOne({
-      student: req.user.id,
-      job: jobId,
-    });
+    if (!opportunity.validated) {
+      return res.status(400).json({ message: `This ${type} is not available for applications` });
+    }
+
+    // Check for duplicate application
+    const query = { student: req.user.id, type };
+    query[modelField] = id;
+    const alreadyApplied = await Application.findOne(query);
 
     if (alreadyApplied) {
-      return res.status(400).json({ message: 'You have already applied to this job' });
+      return res.status(400).json({ message: `You have already applied to this ${type}` });
     }
 
-    const application = await Application.create({
+    const applicationData = {
       student: req.user.id,
-      job: jobId,
+      type,
+    };
+    applicationData[modelField] = id;
+
+    const application = await Application.create(applicationData);
+
+    // Notify the owner
+    await Notification.create({
+      recipient: opportunity[ownerField],
+      type: 'application',
+      message: `A new student has applied to your ${type}: ${opportunity.title}`,
     });
 
     res.status(201).json(application);
@@ -43,23 +71,42 @@ const applyToJob = async (req, res) => {
   }
 };
 
-// @desc    Get all applications for a specific job
-// @route   GET /api/applications/job/:jobId
-// @access  Private (Company)
-const getApplicationsForJob = async (req, res) => {
+// @desc    Get all applications for a specific opportunity
+// @route   GET /api/applications/:type/:id
+// @access  Private (Owner)
+const getApplicationsForOpportunity = async (req, res) => {
   try {
-    const job = await Job.findById(req.params.jobId);
+    const { type, id } = req.params;
+    let opportunity;
+    let ownerField;
+    let modelField;
 
-    if (!job) {
-      return res.status(404).json({ message: 'Job not found' });
+    if (type === 'job') {
+      opportunity = await Job.findById(id);
+      ownerField = 'company';
+      modelField = 'job';
+    } else if (type === 'freelance') {
+      opportunity = await FreelanceProject.findById(id);
+      ownerField = 'client';
+      modelField = 'freelanceProject';
+    } else if (type === 'scholarship') {
+      opportunity = await Scholarship.findById(id);
+      ownerField = 'university';
+      modelField = 'scholarship';
     }
 
-    // Ensure the company owns this job
-    if (job.company.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to view applications for this job' });
+    if (!opportunity) {
+      return res.status(404).json({ message: 'Opportunity not found' });
     }
 
-    const applications = await Application.find({ job: req.params.jobId })
+    // Ensure the owner owns this opportunity
+    if (opportunity[ownerField].toString() !== req.user.id) {
+      return res.status(403).json({ message: 'Not authorized to view applications for this opportunity' });
+    }
+
+    const query = {};
+    query[modelField] = id;
+    const applications = await Application.find(query)
       .populate('student', 'name email profileCompletion')
       .sort({ createdAt: -1 });
 
@@ -75,7 +122,9 @@ const getApplicationsForJob = async (req, res) => {
 const getStudentApplications = async (req, res) => {
   try {
     const applications = await Application.find({ student: req.user.id })
-      .populate('job', 'title description company')
+      .populate('job', 'title company')
+      .populate('freelanceProject', 'title client')
+      .populate('scholarship', 'title university')
       .sort({ createdAt: -1 });
 
     res.json(applications);
@@ -86,7 +135,7 @@ const getStudentApplications = async (req, res) => {
 
 // @desc    Update application status
 // @route   PUT /api/applications/:id/status
-// @access  Private (Company)
+// @access  Private (Owner)
 const updateApplicationStatus = async (req, res) => {
   try {
     const { status } = req.body;
@@ -97,14 +146,20 @@ const updateApplicationStatus = async (req, res) => {
         .json({ message: 'Status must be either "accepted" or "rejected"' });
     }
 
-    const application = await Application.findById(req.params.applicationId).populate('job');
+    const application = await Application.findById(req.params.id)
+        .populate('job')
+        .populate('freelanceProject')
+        .populate('scholarship');
 
     if (!application) {
       return res.status(404).json({ message: 'Application not found' });
     }
 
-    // Ensure the company owns the related job
-    if (application.job.company.toString() !== req.user.id) {
+    let opportunity = application.job || application.freelanceProject || application.scholarship;
+    let ownerField = application.type === 'job' ? 'company' : (application.type === 'freelance' ? 'client' : 'university');
+
+    // Ensure the owner owns the related opportunity
+    if (opportunity[ownerField].toString() !== req.user.id) {
       return res
         .status(403)
         .json({ message: 'Not authorized to update this application' });
@@ -113,6 +168,13 @@ const updateApplicationStatus = async (req, res) => {
     application.status = status;
     const updatedApplication = await application.save();
 
+    // Notify the student
+    await Notification.create({
+      recipient: application.student,
+      type: 'validation',
+      message: `Your application status for "${opportunity.title}" has been updated to: ${status}`,
+    });
+
     res.json(updatedApplication);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -120,8 +182,8 @@ const updateApplicationStatus = async (req, res) => {
 };
 
 module.exports = {
-  applyToJob,
-  getApplicationsForJob,
+  applyToOpportunity,
+  getApplicationsForOpportunity,
   getStudentApplications,
   updateApplicationStatus,
 };

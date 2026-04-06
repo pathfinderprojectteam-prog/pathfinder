@@ -1,26 +1,29 @@
 const express = require('express');
 const router = express.Router();
-const {
-  generateCV,
-  getUserCVs,
-  updateCV,
-} = require('../controllers/cvController');
+const multer = require('multer');
 const { protect } = require('../middleware/authMiddleware');
-const { allowRoles } = require('../middleware/roleMiddleware');
+const { 
+  getCV, 
+  generateCV, 
+  updateCV, 
+  uploadCV, 
+  downloadPDFCV, 
+  downloadDOCXCV 
+} = require('../controllers/cvController');
 
-// All CV routes are protected and restricted to students
-router.use(protect, allowRoles('student'));
+// Configure multer for temp file upload
+const upload = multer({ dest: 'uploads/' });
 
-// @desc    Generate a CV from user's profile
-// @route   POST /api/cv/generate
-router.post('/generate', generateCV);
+// CV Payload Endpoints
+router.get('/', protect, getCV);
+router.post('/generate', protect, generateCV);
+router.put('/', protect, updateCV);
 
-// @desc    Get all active CVs for the user
-// @route   GET /api/cv
-router.get('/', getUserCVs);
+// CV Upload to Resume Parser
+router.post('/upload', protect, upload.single('cvFile'), uploadCV);
 
-// @desc    Update CV content
-// @route   PUT /api/cv/:cvId
-router.put('/:cvId', updateCV);
+// ATS-Optimized CV Generation Downloads
+router.get('/download/pdf', protect, downloadPDFCV);
+router.get('/download/docx', protect, downloadDOCXCV);
 
 module.exports = router;

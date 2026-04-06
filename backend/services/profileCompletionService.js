@@ -3,42 +3,57 @@ const calculateProfileCompletion = (profile) => {
 
   let completion = 0;
 
-  // Bio / personal description -> 10%
-  if (profile.bio && profile.bio.trim() !== '') {
-    completion += 10;
+  // 1. Personal Information (15%)
+  // Full name, Email (on User), Phone, Location (city, country), Profile picture (optional)
+  // We assume user name/email exist since they are required for account creation
+  const hasPersonal = !!(profile.phone && profile.location && profile.location.city && profile.location.country);
+  if (hasPersonal) {
+    completion += 15;
   }
 
-  // Education -> 20%
+  // 2. Education (20%)
+  // Degree name, Field of study, Institution name, Year of graduation, GPA (optional)
   if (profile.educations && profile.educations.length > 0) {
-    completion += 20;
+    const hasValidEd = profile.educations.some(ed => ed.degree && ed.field && ed.institution && ed.yearOfGraduation);
+    if (hasValidEd) completion += 20;
   }
 
-  // Skills -> 20%
+  // 3. Skills (25%)
+  // Skill name, Proficiency level, Years of experience
   if (profile.skills && profile.skills.length > 0) {
-    completion += 20;
+    const hasValidSkill = profile.skills.some(sk => sk.name && sk.level && sk.yearsExperience !== undefined);
+    if (hasValidSkill) completion += 25;
   }
 
-  // Experience -> 20%
+  // 4. Experience (25%)
+  // Job title, Company name, Start date, End date (or Predict), Description
   if (profile.experiences && profile.experiences.length > 0) {
-    completion += 20;
+    const hasValidExp = profile.experiences.some(ex => ex.title && ex.company && ex.startDate && (ex.endDate || ex.isCurrent) && ex.description);
+    if (hasValidExp) completion += 25;
   }
 
-  // Availability -> 10%
-  if (profile.availability && profile.availability.trim() !== '') {
-    completion += 10;
-  }
-
-  // Avatar -> 10%
-  if (profile.avatar && profile.avatar.trim() !== '') {
-    completion += 10;
-  }
-
-  // CV -> 10%
-  if (profile.cvFile && profile.cvFile.trim() !== '') {
-    completion += 10;
+  // 5. Career Objective (15%)
+  // Target job title, Preferred work type, Desired salary range, Industries interested in
+  if (profile.careerObjective) {
+    const obj = profile.careerObjective;
+    if (obj.targetJobTitle && obj.preferredWorkType && obj.desiredSalary && obj.industries && obj.industries.length > 0) {
+      completion += 15;
+    }
   }
 
   return Math.min(completion, 100); 
 };
 
-module.exports = { calculateProfileCompletion };
+/**
+ * Validates if the user can receive recommendations.
+ * Blocks recommendations if profile completion is < 100%.
+ */
+const canReceiveRecommendations = (profile) => {
+  const score = calculateProfileCompletion(profile);
+  return score === 100;
+};
+
+module.exports = { 
+  calculateProfileCompletion,
+  canReceiveRecommendations
+};

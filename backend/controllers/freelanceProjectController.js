@@ -1,4 +1,5 @@
 const FreelanceProject = require('../models/FreelanceProject');
+const Client = require('../models/Client');
 
 // @desc    Create a freelance project
 // @route   POST /api/freelance-projects
@@ -11,12 +12,16 @@ const createFreelanceProject = async (req, res) => {
       return res.status(400).json({ message: 'Please provide title and description' });
     }
 
+    if (req.user.role !== 'Client') {
+      return res.status(403).json({ message: 'Only clients can post freelance projects.' });
+    }
+
     const project = await FreelanceProject.create({
       title,
       description,
       difficulty,
       client: req.user.id,
-      validated: false,
+      status: 'pending',
     });
 
     res.status(201).json(project);
@@ -30,7 +35,7 @@ const createFreelanceProject = async (req, res) => {
 // @access  Public
 const getAllFreelanceProjects = async (req, res) => {
   try {
-    const projects = await FreelanceProject.find({ validated: true })
+    const projects = await FreelanceProject.find({ status: 'validated' })
       .populate('client', 'name email organizationName')
       .sort({ createdAt: -1 });
 
@@ -83,6 +88,10 @@ const updateFreelanceProject = async (req, res) => {
     project.title = title || project.title;
     project.description = description || project.description;
     project.difficulty = difficulty || project.difficulty;
+
+    // Reset status for re-validation and clear feedback
+    project.status = 'pending';
+    project.feedbackMessage = '';
 
     const updatedProject = await project.save();
 

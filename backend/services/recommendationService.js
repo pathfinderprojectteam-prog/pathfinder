@@ -1,78 +1,104 @@
+const axios = require('axios');
 const Job = require('../models/Job');
 const FreelanceProject = require('../models/FreelanceProject');
 const Scholarship = require('../models/Scholarship');
 const { calculateMatchScore } = require('./matchScoreService');
-const { calculateProfileCompletion } = require('./profileCompletionService');
+const { calculateProfileCompletion, canReceiveRecommendations } = require('./profileCompletionService');
 
-const TOP_N = 10;
-const MIN_SCORE = 50;
+const GORSE_URL = process.env.GORSE_URL || 'http://localhost:8088';
+const GORSE_API_KEY = process.env.GORSE_API_KEY || ''; // If applicable
+
+const gorseClient = axios.create({
+  baseURL: GORSE_URL,
+  headers: GORSE_API_KEY ? { 'X-API-Key': GORSE_API_KEY } : {}
+});
 
 /**
- * Score, filter, and rank a list of opportunities against a student profile.
- * @param {Object[]} opportunities
- * @param {Object}   profile
- * @returns {Object[]} Top N opportunities with score attached, sorted descending
+ * Insert or update a user (Student) into Gorse
  */
-const rankOpportunities = (opportunities, profile) => {
-  const completion = calculateProfileCompletion(profile);
+const insertUserIntoGorse = async (userId, profileData) => {
+  try {
+    await gorseClient.post('/api/user', {
+      UserId: userId.toString(),
+      Labels: profileData.skills || [],
+      Comment: 'Student Profile Sync'
+    });
+  } catch (err) {
+    console.error('Gorse User Sync Error:', err.message);
+  }
+};
 
-  return opportunities
-    .map((opp) => {
-      const plain = opp.toObject ? opp.toObject() : opp;
-      const result = calculateMatchScore(profile, plain);
-      
-      let finalScore = result.score;
-      let finalReason = result.reason;
+/**
+ * Insert or update an item (Job/Freelance/Scholarship) into Gorse
+ */
+const insertItemIntoGorse = async (itemId, type, metadata) => {
+  try {
+    await gorseClient.post('/api/item', {
+      ItemId: itemId.toString(),
+      IsHidden: false,
+      Categories: [type], // e.g. 'job', 'freelance', 'scholarship'
+      Timestamp: new Date().toISOString(),
+      Labels: metadata.skills || [],
+      Comment: `${type} insertion`
+    });
+  } catch (err) {
+    console.error('Gorse Item Sync Error:', err.message);
+  }
+};
 
-      if (completion < 50) {
-        finalScore = Math.max(0, finalScore - 20);
-        finalReason += finalReason 
-          ? ', Low profile completion affects recommendation' 
-          : 'Low profile completion affects recommendation';
-      }
+/**
+ * Get personalized recommendations for a user via Gorse & match scoring fallback
+ */
+const getRecommendedItems = async (profile, type) => {
+  if (!canReceiveRecommendations(profile)) {
+    throw new Error('Profile must be 100% complete to receive recommendations.');
+  }
 
-      return { 
-        ...plain, 
-        matchScore: finalScore, 
-        matchReason: finalReason 
-      };
+  let recommendedItemIds = [];
+  try {
+    // Attempt to get items from Gorse Recommender
+    const response = await gorseClient.get(`/api/recommend/${profile.user.toString()}/${type}?n=10`);
+    recommendedItemIds = response.data || [];
+  } catch (error) {
+    console.warn('Gorse Recommendation Failed, falling back to dynamic score calculation:', error.message);
+  }
+
+  // Fetch from DB based on type
+  let dbItems = [];
+  if (type === 'job') dbItems = await Job.find({ validated: true }).lean();
+  if (type === 'freelance') dbItems = await FreelanceProject.find({ validated: true }).lean();
+  if (type === 'scholarship') dbItems = await Scholarship.find({ validated: true }).lean();
+
+  // If Gorse returned IDs, filter DB items and add dummy matchScore
+  if (recommendedItemIds.length > 0) {
+    return dbItems
+      .filter((item) => recommendedItemIds.includes(item._id.toString()))
+      .map(item => ({
+        ...item,
+        matchScore: calculateMatchScore(profile, item).score,
+        matchReason: 'AI Recommended'
+      }))
+      .sort((a, b) => b.matchScore - a.matchScore);
+  }
+
+  // Fallback: Use manual formula scoring via matchScoreService
+  return dbItems
+    .map(item => {
+      const match = calculateMatchScore(profile, item);
+      return { ...item, matchScore: match.score, matchReason: match.reason };
     })
-    .filter((opp) => opp.matchScore >= MIN_SCORE)
+    .filter(item => item.matchScore >= 50)
     .sort((a, b) => b.matchScore - a.matchScore)
-    .slice(0, TOP_N);
+    .slice(0, 10);
 };
 
-/**
- * Recommend validated jobs for a given student profile.
- * @param {Object} profile – Populated profile (skills, experiences, educations)
- * @returns {Promise<Object[]>}
- */
-const getRecommendedJobs = async (profile) => {
-  const jobs = await Job.find({ validated: true }).lean();
-  return rankOpportunities(jobs, profile);
-};
-
-/**
- * Recommend validated freelance projects for a given student profile.
- * @param {Object} profile
- * @returns {Promise<Object[]>}
- */
-const getRecommendedFreelanceProjects = async (profile) => {
-  const projects = await FreelanceProject.find({ validated: true }).lean();
-  return rankOpportunities(projects, profile);
-};
-
-/**
- * Recommend validated scholarships for a given student profile.
- * @param {Object} profile
- * @returns {Promise<Object[]>}
- */
-const getRecommendedScholarships = async (profile) => {
-  const scholarships = await Scholarship.find({ validated: true }).lean();
-  return rankOpportunities(scholarships, profile);
-};
+const getRecommendedJobs = (profile) => getRecommendedItems(profile, 'job');
+const getRecommendedFreelanceProjects = (profile) => getRecommendedItems(profile, 'freelance');
+const getRecommendedScholarships = (profile) => getRecommendedItems(profile, 'scholarship');
 
 module.exports = {
+  insertUserIntoGorse,
+  insertItemIntoGorse,
   getRecommendedJobs,
   getRecommendedFreelanceProjects,
   getRecommendedScholarships,

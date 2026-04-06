@@ -15,8 +15,8 @@ router.get('/', getAllJobs);
 router.get('/:id', getJobById);
 
 // Company-only routes
-router.post('/', protect, allowRoles('company'), createJob);
-router.put('/:id', protect, allowRoles('company'), updateJob);
-router.delete('/:id', protect, allowRoles('company'), deleteJob);
+router.post('/', protect, allowRoles('Company'), createJob);
+router.put('/:id', protect, allowRoles('Company'), updateJob);
+router.delete('/:id', protect, allowRoles('Company'), deleteJob);
 
 module.exports = router;

@@ -1,20 +1,20 @@
 const express = require('express');
 const router = express.Router();
 const {
-  applyToJob,
+  applyToOpportunity,
   getStudentApplications,
-  getApplicationsForJob,
+  getApplicationsForOpportunity,
   updateApplicationStatus,
 } = require('../controllers/applicationController');
 const { protect } = require('../middleware/authMiddleware');
 const { allowRoles } = require('../middleware/roleMiddleware');
 
 // Student routes
-router.post('/:jobId', protect, allowRoles('student'), applyToJob);
-router.get('/student', protect, allowRoles('student'), getStudentApplications);
+router.post('/:type/:id', protect, allowRoles('Student'), applyToOpportunity);
+router.get('/me', protect, allowRoles('Student'), getStudentApplications);
 
-// Company routes
-router.get('/job/:jobId', protect, allowRoles('company'), getApplicationsForJob);
-router.put('/:applicationId/status', protect, allowRoles('company'), updateApplicationStatus);
+// Multi-Role routes (Company, Client, University)
+router.get('/:type/:id', protect, allowRoles('Company', 'Client', 'University'), getApplicationsForOpportunity);
+router.put('/:id/status', protect, allowRoles('Company', 'Client', 'University'), updateApplicationStatus);
 
 module.exports = router;

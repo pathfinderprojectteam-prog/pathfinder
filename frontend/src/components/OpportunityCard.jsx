@@ -4,11 +4,15 @@ import { dataService } from '../services/dataService';
 export default function OpportunityCard({ opportunity, type }) {
   const handleApply = async () => {
     try {
-      if (type !== 'job') {
-        alert("Application endpoint configured exclusively for Jobs in this sprint demo.");
-        return;
+      if (type === 'job') {
+        await dataService.applyToJob(opportunity._id);
+      } else if (type === 'freelance') {
+        await dataService.applyToFreelance(opportunity._id);
+      } else if (type === 'scholarship') {
+        await dataService.applyToScholarship(opportunity._id);
+      } else {
+        throw new Error("Unknown opportunity type.");
       }
-      await dataService.applyToJob(opportunity._id);
       alert("Application submitted successfully! Track it in the Applications tab.");
     } catch (err) {
       alert("Error applying. You might have already applied or missing critical profile items.");

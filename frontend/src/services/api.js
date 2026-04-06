@@ -3,7 +3,7 @@ import axios from 'axios';
 // Create a configured Axios instance
 const api = axios.create({
   // Pointing to the locally hosted backend API standard port
-  baseURL: 'http://localhost:5000',
+  baseURL: 'http://localhost:5001',
   headers: {
     'Content-Type': 'application/json',
   },

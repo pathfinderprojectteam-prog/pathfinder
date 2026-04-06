@@ -13,14 +13,23 @@ const jobSchema = new mongoose.Schema(
     requiredExperience: {
       type: Number,
     },
+    requiredSkills: [
+      {
+        type: String,
+      },
+    ],
     company: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Company',
       required: true,
     },
-    validated: {
-      type: Boolean,
-      default: false,
+    status: {
+      type: String,
+      enum: ['pending', 'validated', 'rejected', 'changes_requested'],
+      default: 'pending',
+    },
+    feedbackMessage: {
+      type: String,
     },
   },
   {

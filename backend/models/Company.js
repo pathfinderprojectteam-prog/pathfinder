@@ -10,6 +10,6 @@ const companySchema = new mongoose.Schema({
   },
 });
 
-const Company = User.discriminator('company', companySchema);
+const Company = User.discriminator('Company', companySchema);
 
 module.exports = Company;

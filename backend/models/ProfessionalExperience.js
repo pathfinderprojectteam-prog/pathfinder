@@ -13,8 +13,15 @@ const professionalExperienceSchema = new mongoose.Schema(
     company: {
       type: String,
     },
-    years: {
-      type: Number,
+    startDate: {
+      type: Date,
+    },
+    endDate: {
+      type: Date,
+    },
+    isCurrent: {
+      type: Boolean,
+      default: false,
     },
     description: {
       type: String,

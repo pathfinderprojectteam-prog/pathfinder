@@ -15,8 +15,8 @@ router.get('/', getAllScholarships);
 router.get('/:id', getScholarshipById);
 
 // University-only routes
-router.post('/', protect, allowRoles('university'), createScholarship);
-router.put('/:id', protect, allowRoles('university'), updateScholarship);
-router.delete('/:id', protect, allowRoles('university'), deleteScholarship);
+router.post('/', protect, allowRoles('University'), createScholarship);
+router.put('/:id', protect, allowRoles('University'), updateScholarship);
+router.delete('/:id', protect, allowRoles('University'), deleteScholarship);
 
 module.exports = router;

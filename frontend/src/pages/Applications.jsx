@@ -43,16 +43,16 @@ export default function Applications() {
                 <tr key={app._id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-5">
                     <div className="font-bold text-slate-900 border-b border-dashed border-slate-300 w-fit pb-1">
-                      {app.job?.title || app.job || 'Unknown Resource Object'}
+                      {app.job?.title || 'Unknown Position'}
                     </div>
                   </td>
                   <td className="px-6 py-5">
-                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide
-                      ${app.status === 'Pending' ? 'bg-amber-100 text-amber-800 border border-amber-200' : 
-                        app.status === 'Accepted' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 
-                        'bg-slate-100 text-slate-800 border border-slate-200'}`
+                    <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border
+                      ${app.status === 'pending' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
+                        app.status === 'accepted' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
+                        'bg-rose-50 text-rose-700 border-rose-200'}`
                     }>
-                      {app.status === 'Pending' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>}
+                      {app.status === 'pending' && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>}
                       {app.status}
                     </span>
                   </td>

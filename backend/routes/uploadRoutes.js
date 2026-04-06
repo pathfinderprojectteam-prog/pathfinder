@@ -12,10 +12,11 @@ router.post('/', protect, upload.single('file'), (req, res) => {
   }
 
   res.status(201).json({
+    success: true,
     message: 'File uploaded successfully.',
     filename: req.file.filename,
     path: `/uploads/${req.file.filename}`,
-    size: req.file.size,
+    originalName: req.file.originalname,
     mimetype: req.file.mimetype,
   });
 });
