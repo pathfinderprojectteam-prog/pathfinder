@@ -10,7 +10,7 @@ export default function CompanyDashboard() {
 
   // New Job Form State
   const [jobForm, setJobForm] = useState({
-    title: '', description: '', requiredExperience: 0, requiredSkills: ''
+    title: '', description: '', requiredExperience: 0, requiredDegreeLevel: 'Any', requiredSkills: ''
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
@@ -49,7 +49,7 @@ export default function CompanyDashboard() {
         alert('Job successfully posted pending admin validation!');
       }
 
-      setJobForm({ title: '', description: '', requiredExperience: 0, requiredSkills: '' });
+      setJobForm({ title: '', description: '', requiredExperience: 0, requiredDegreeLevel: 'Any', requiredSkills: '' });
       setIsEditing(false);
       setEditId(null);
       setActiveTab('manage');
@@ -65,6 +65,7 @@ export default function CompanyDashboard() {
       title: job.title,
       description: job.description,
       requiredExperience: job.requiredExperience,
+      requiredDegreeLevel: job.requiredDegreeLevel || 'Any',
       requiredSkills: Array.isArray(job.requiredSkills) ? job.requiredSkills.join(', ') : job.requiredSkills
     });
     setEditId(job._id);
@@ -130,13 +131,24 @@ export default function CompanyDashboard() {
                 placeholder="Describe the role..."
               />
             </div>
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-3 gap-6">
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Required Experience (Years)</label>
                 <input 
                   type="number" min="0" required value={jobForm.requiredExperience} onChange={e => setJobForm({...jobForm, requiredExperience: e.target.value})}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Required Degree</label>
+                <select
+                  value={jobForm.requiredDegreeLevel} onChange={e => setJobForm({...jobForm, requiredDegreeLevel: e.target.value})}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-white"
+                >
+                  {['Any', 'High School', 'Bachelor', 'Master', 'PhD'].map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Required Skills (Comma separated)</label>

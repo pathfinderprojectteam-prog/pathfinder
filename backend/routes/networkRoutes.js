@@ -10,10 +10,14 @@ const {
   unfollowUser,
   getNetworkStats,
   getFollowing,
+  searchUsers,
 } = require('../controllers/networkController');
 
 // Feed
 router.get('/feed', protect, getFeed);
+
+// Users 
+router.get('/search', protect, searchUsers);
 
 // Posts
 router.post('/posts', protect, createPost);

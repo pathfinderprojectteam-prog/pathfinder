@@ -10,6 +10,7 @@ export default function Messages() {
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const [sendingMsg, setSendingMsg] = useState(false);
   const [onlineUsers, setOnlineUsers] = useState(new Set());
   const [typingUsers, setTypingUsers] = useState(new Set());
@@ -41,7 +42,11 @@ export default function Messages() {
       // If message belongs to active chat, append it and mark as read
       setActiveChat(currentActive => {
         if (currentActive && currentActive._id === newMsg.conversation) {
-          setMessages(prev => [...prev, newMsg]);
+          setMessages(prev => {
+             // BUG 2 FIX: Unique check to prevent duplicates from broadcast
+             if (prev.some(m => m._id === newMsg._id)) return prev;
+             return [...prev, newMsg];
+          });
           // Tell server I read it
           if (newMsg.sender._id !== user._id) {
             dataService.markConversationRead(newMsg.conversation).catch(console.error);
@@ -118,6 +123,7 @@ export default function Messages() {
     setTypingUsers(new Set());
     
     socket?.emit('join_room', conversation._id);
+    setLoadingMessages(true);
 
     try {
       const res = await dataService.getMessages(conversation._id);
@@ -127,6 +133,8 @@ export default function Messages() {
       fetchConversations(); // refresh unread count
     } catch (err) {
       console.error('Failed to load messages', err);
+    } finally {
+      setLoadingMessages(false);
     }
   };
 
@@ -155,7 +163,14 @@ export default function Messages() {
     setSendingMsg(true);
     try {
       const res = await dataService.sendMessage(activeChat._id, message);
-      setMessages(prev => [...prev, res.data]); // local echo
+      const savedMsg = res.data;
+      
+      setMessages(prev => {
+         // BUG 2 FIX: Unique check for outgoing
+         if (prev.some(m => m._id === savedMsg._id)) return prev;
+         return [...prev, savedMsg];
+      });
+      
       setMessage('');
       fetchConversations();
     } catch (err) {
@@ -165,21 +180,83 @@ export default function Messages() {
     }
   };
 
+  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+
+  const handleSearch = async (e) => {
+    const q = e.target.value;
+    setSearchQuery(q);
+    if (!q.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    setSearching(true);
+    try {
+      const res = await dataService.searchUsers(q);
+      setSearchResults(res.data || []);
+    } catch (err) {
+      console.error('Search failed', err);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const startNewChat = async (recipient) => {
+    try {
+      const res = await dataService.createConversation(recipient._id);
+      const newConv = res.data;
+      // Refresh list and open chat
+      await fetchConversations();
+      openChat(newConv);
+      setShowSearchModal(false);
+      setSearchQuery('');
+      setSearchResults([]);
+    } catch (err) {
+      console.error('Failed to start chat', err);
+    }
+  };
+
   const currentOtherParticipant = activeChat ? (activeChat.participants || []).find(p => typeof p === 'object' && p._id !== user._id) : null;
   const isOtherOnline = currentOtherParticipant ? onlineUsers.has(currentOtherParticipant._id) : false;
 
   return (
-    <div className="max-w-6xl mx-auto h-[75vh] flex gap-6 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+    <div className="max-w-6xl mx-auto h-[75vh] flex gap-6 bg-white border border-slate-200 rounded-3xl p-6 shadow-sm relative">
       
       {/* Left Sidebar - Chat List */}
       <div className="w-1/3 flex flex-col border-r border-slate-100 pr-4">
-        <h2 className="text-xl font-black text-slate-900 tracking-tight mb-4 px-2">Conversations</h2>
+        <div className="flex justify-between items-center mb-4 px-2">
+           <h2 className="text-xl font-black text-slate-900 tracking-tight">Messages</h2>
+           <button 
+             onClick={() => setShowSearchModal(true)}
+             className="p-2 bg-indigo-50 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+             title="New Message"
+           >
+             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+             </svg>
+           </button>
+        </div>
         
         <div className="flex-1 overflow-y-auto space-y-2">
           {loading ? (
             <div className="text-slate-400 font-bold text-sm animate-pulse px-2">Loading...</div>
           ) : conversations.length === 0 ? (
-            <div className="text-slate-400 text-sm font-bold px-2">No conversations yet.</div>
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+               <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 mb-3">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+               </div>
+               <p className="text-slate-400 text-xs font-bold uppercase tracking-widest px-2">No conversations yet</p>
+               <button 
+                 onClick={() => setShowSearchModal(true)}
+                 className="mt-4 px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-indigo-500 transition-all shadow-sm uppercase tracking-wide"
+               >
+                 Start a Chat
+               </button>
+            </div>
           ) : conversations.map(chat => {
             const other = (chat.participants || []).find(p => typeof p === 'object' && p._id !== user._id);
             const displayName = other?.name || 'Unknown';
@@ -237,7 +314,12 @@ export default function Messages() {
             </div>
             
             <div className="flex-1 p-6 overflow-y-auto flex flex-col gap-4">
-              {messages.length === 0 ? (
+              {loadingMessages ? (
+                <div className="flex flex-col items-center justify-center h-full gap-3">
+                   <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                   <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Syncing history...</p>
+                </div>
+              ) : messages.length === 0 ? (
                 <div className="text-center text-xs text-slate-400 font-bold mt-auto mb-auto uppercase tracking-widest">Send a message to start</div>
               ) : messages.map((msg, i) => {
                 const isMine = msg.sender?._id === user._id || msg.sender === user._id;
@@ -294,6 +376,88 @@ export default function Messages() {
           </div>
         )}
       </div>
+
+      {/* Mobile FAB */}
+      <button
+        onClick={() => setShowSearchModal(true)}
+        className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-indigo-500 transition-all z-20"
+      >
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
+
+      {/* Search Users Modal */}
+      {showSearchModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[100]">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <h3 className="text-xl font-black text-slate-900 tracking-tight">New Conversation</h3>
+              <button 
+                onClick={() => {
+                   setShowSearchModal(false);
+                   setSearchQuery('');
+                   setSearchResults([]);
+                }}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="relative mb-6">
+                <input
+                  type="text"
+                  autoFocus
+                  value={searchQuery}
+                  onChange={handleSearch}
+                  placeholder="Search by name or email..."
+                  className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/5 text-slate-900 transition-all"
+                />
+                {searching && (
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                )}
+              </div>
+
+              <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
+                {searchResults.length > 0 ? (
+                  searchResults.map(u => (
+                    <button
+                      key={u._id}
+                      onClick={() => startNewChat(u)}
+                      className="w-full flex items-center gap-4 p-3 hover:bg-slate-50 border border-transparent hover:border-slate-100 rounded-2xl transition-all group"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 font-bold text-lg uppercase overflow-hidden shrink-0">
+                        {u.avatar ? <img src={u.avatar} alt="avatar" className="w-full h-full object-cover" /> : u.name.charAt(0)}
+                      </div>
+                      <div className="text-left">
+                        <p className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors uppercase text-sm tracking-wide">{u.name}</p>
+                        <p className="text-xs text-slate-500 font-medium">{u.email} • {u.role}</p>
+                      </div>
+                      <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                         <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                         </div>
+                      </div>
+                    </button>
+                  ))
+                ) : searchQuery.length > 2 && !searching ? (
+                  <div className="text-center py-8 text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em]">No users found</div>
+                ) : !searching && (
+                  <div className="text-center py-8 text-slate-400 font-bold uppercase text-[10px] tracking-[0.2em]">Try searching for someone</div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

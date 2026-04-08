@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const adminController = require('../controllers/adminController');
 const {
   validateJob,
   rejectJob,
@@ -32,5 +33,10 @@ router.put('/reject/freelance-project/:id', protect, allowRoles('Admin'), reject
 
 router.put('/validate/scholarship/:id', protect, allowRoles('Admin'), validateScholarship);
 router.put('/reject/scholarship/:id', protect, allowRoles('Admin'), rejectScholarship);
+
+// Admin-only user management routes
+router.get('/users', protect, allowRoles('Admin'), adminController.getAllUsers);
+router.put('/users/:id/status', protect, allowRoles('Admin'), adminController.toggleUserStatus);
+router.delete('/users/:id', protect, allowRoles('Admin'), adminController.deleteUser);
 
 module.exports = router;

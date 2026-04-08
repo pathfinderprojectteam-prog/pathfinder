@@ -20,6 +20,14 @@ const freelanceProjectSchema = new mongoose.Schema(
         type: String,
       },
     ],
+    budget: {
+      type: Number,
+      default: 0,
+    },
+    timeline: {
+      type: String,
+      default: '',
+    },
     client: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Client',

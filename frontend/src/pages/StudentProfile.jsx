@@ -16,7 +16,12 @@ export default function Profile() {
       preferredWorkType: '',
       desiredSalary: '',
       industries: []
-    }
+    },
+    // Academic details for scholarship eligibility
+    gpa: '',
+    fieldOfStudy: '',
+    degreeLevel: '',
+    yearsOfStudy: ''
   });
 
   const [loading, setLoading] = useState(true);
@@ -36,7 +41,11 @@ export default function Profile() {
             educations: res.data.educations || [],
             skills: res.data.skills || [],
             experiences: res.data.experiences || [],
-            careerObjective: res.data.careerObjective || { targetJobTitle: '', preferredWorkType: '', desiredSalary: '', industries: [] }
+            careerObjective: res.data.careerObjective || { targetJobTitle: '', preferredWorkType: '', desiredSalary: '', industries: [] },
+            gpa: res.data.gpa ?? '',
+            fieldOfStudy: res.data.fieldOfStudy || '',
+            degreeLevel: res.data.degreeLevel || '',
+            yearsOfStudy: res.data.yearsOfStudy ?? ''
           });
         }
       })
@@ -47,20 +56,25 @@ export default function Profile() {
   // Compute real-time Profile Completion
   const completionPercentage = useMemo(() => {
     let score = 0;
-    
+
     // 1. Personal (15%)
     if (formData.phone && formData.location.city && formData.location.country) {
       score += 15;
     }
 
-    // 2. Education (20%)
+    // 2. Education (15%)
     if (formData.educations.some(ed => ed.degree && ed.field && ed.institution && ed.yearOfGraduation)) {
-      score += 20;
+      score += 15;
     }
 
-    // 3. Skills (25%)
+    // 2.5. Academic Details (10%) — required for scholarship eligibility
+    if (formData.gpa !== '' && formData.fieldOfStudy && formData.degreeLevel && formData.yearsOfStudy !== '') {
+      score += 10;
+    }
+
+    // 3. Skills (20%)
     if (formData.skills.some(sk => sk.name && sk.level && sk.yearsExperience !== '')) {
-      score += 25;
+      score += 20;
     }
 
     // 4. Experience (25%)
@@ -153,7 +167,7 @@ export default function Profile() {
         {/* SECTION 2: EDUCATION */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
           <h2 className="text-xl font-bold text-slate-900 mb-6 flex justify-between items-center">
-            <span>2. Education <span className="text-sm font-normal text-slate-500">(20%)</span></span>
+            <span>2. Education <span className="text-sm font-normal text-slate-500">(15%)</span></span>
             <button type="button" onClick={() => setFormData({...formData, educations: [...formData.educations, { degree: '', field: '', institution: '', yearOfGraduation: '', gpa: '' }]})} className="text-sm px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg font-bold transition">
               + Add Education
             </button>
@@ -179,10 +193,80 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* SECTION 2.5: ACADEMIC DETAILS */}
+        <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl shadow-sm border border-amber-200 p-8">
+          <h2 className="text-xl font-bold text-slate-900 mb-2 flex items-center gap-3">
+            <span>2.5. Academic Details</span>
+            <span className="text-sm font-normal text-amber-600 bg-amber-100 border border-amber-200 px-2 py-0.5 rounded-full">10% — Required for Scholarships</span>
+          </h2>
+          <p className="text-sm text-slate-500 mb-6">These details are used to match you with eligible scholarships.</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Current GPA <span className="text-slate-400 font-normal">(0.0 – 4.0)</span></label>
+              <input
+                type="number" min="0" max="4" step="0.1"
+                value={formData.gpa}
+                onChange={e => setFormData({...formData, gpa: e.target.value})}
+                className="w-full border border-amber-200 rounded-lg p-3 bg-white focus:ring-2 focus:ring-amber-400 outline-none transition-all"
+                placeholder="e.g. 3.5"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Field of Study</label>
+              <select
+                value={formData.fieldOfStudy}
+                onChange={e => setFormData({...formData, fieldOfStudy: e.target.value})}
+                className="w-full border border-amber-200 rounded-lg p-3 bg-white focus:ring-2 focus:ring-amber-400 outline-none transition-all"
+              >
+                <option value="">Select your field...</option>
+                {['Computer Science','Engineering','Business','Medicine','Arts','Law','Education','Mathematics','Physics','Chemistry','Biology','Economics','Psychology','Architecture','Other'].map(f => (
+                  <option key={f} value={f}>{f}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Current Degree Level</label>
+              <select
+                value={formData.degreeLevel}
+                onChange={e => setFormData({...formData, degreeLevel: e.target.value})}
+                className="w-full border border-amber-200 rounded-lg p-3 bg-white focus:ring-2 focus:ring-amber-400 outline-none transition-all"
+              >
+                <option value="">Select degree level...</option>
+                <option value="High School">High School</option>
+                <option value="Bachelor">Bachelor</option>
+                <option value="Master">Master</option>
+                <option value="PhD">PhD</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Years of Study Completed</label>
+              <input
+                type="number" min="0" max="10" step="1"
+                value={formData.yearsOfStudy}
+                onChange={e => setFormData({...formData, yearsOfStudy: e.target.value})}
+                className="w-full border border-amber-200 rounded-lg p-3 bg-white focus:ring-2 focus:ring-amber-400 outline-none transition-all"
+                placeholder="e.g. 2"
+              />
+            </div>
+          </div>
+          {/* Eligibility Preview */}
+          {(formData.gpa !== '' || formData.fieldOfStudy || formData.degreeLevel) && (
+            <div className="mt-6 p-4 bg-white border border-amber-100 rounded-xl">
+              <p className="text-xs font-black text-amber-700 uppercase tracking-widest mb-2">Scholarship Eligibility Preview</p>
+              <div className="flex flex-wrap gap-2">
+                {formData.gpa !== '' && <span className="px-3 py-1 bg-amber-50 border border-amber-200 rounded-full text-xs font-bold text-amber-800">GPA: {formData.gpa}</span>}
+                {formData.fieldOfStudy && <span className="px-3 py-1 bg-amber-50 border border-amber-200 rounded-full text-xs font-bold text-amber-800">{formData.fieldOfStudy}</span>}
+                {formData.degreeLevel && <span className="px-3 py-1 bg-amber-50 border border-amber-200 rounded-full text-xs font-bold text-amber-800">{formData.degreeLevel}</span>}
+                {formData.yearsOfStudy !== '' && <span className="px-3 py-1 bg-amber-50 border border-amber-200 rounded-full text-xs font-bold text-amber-800">{formData.yearsOfStudy} yr{formData.yearsOfStudy != 1 ? 's' : ''} studied</span>}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* SECTION 3: SKILLS */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
           <h2 className="text-xl font-bold text-slate-900 mb-6 flex justify-between items-center">
-            <span>3. Skills <span className="text-sm font-normal text-slate-500">(25%)</span></span>
+            <span>3. Skills <span className="text-sm font-normal text-slate-500">(20%)</span></span>
             <button type="button" onClick={() => setFormData({...formData, skills: [...formData.skills, { name: '', level: 'Beginner', yearsExperience: '' }]})} className="text-sm px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg font-bold transition">
               + Add Skill
             </button>

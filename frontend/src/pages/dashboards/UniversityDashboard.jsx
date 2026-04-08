@@ -9,7 +9,9 @@ export default function UniversityDashboard() {
   const [loading, setLoading] = useState(true);
 
   const [scholarshipForm, setScholarshipForm] = useState({
-    title: '', academicLevelRequired: 'Bachelor', deadline: '', requiredSkills: ''
+    title: '', description: '', academicLevelRequired: 'Bachelor', deadline: '',
+    minimumGPA: 0, requiredFieldOfStudy: 'Any', minimumYearsOfStudy: 0,
+    nationality: 'Any', amount: 0, requiredSkills: ''
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
@@ -60,8 +62,14 @@ export default function UniversityDashboard() {
   const startEdit = (scholarship) => {
     setScholarshipForm({
       title: scholarship.title,
+      description: scholarship.description || '',
       academicLevelRequired: scholarship.academicLevelRequired,
       deadline: scholarship.deadline ? new Date(scholarship.deadline).toISOString().split('T')[0] : '',
+      minimumGPA: scholarship.minimumGPA || 0,
+      requiredFieldOfStudy: scholarship.requiredFieldOfStudy || 'Any',
+      minimumYearsOfStudy: scholarship.minimumYearsOfStudy || 0,
+      nationality: scholarship.nationality || 'Any',
+      amount: scholarship.amount || 0,
       requiredSkills: Array.isArray(scholarship.requiredSkills) ? scholarship.requiredSkills.join(', ') : scholarship.requiredSkills
     });
     setEditId(scholarship._id);
@@ -87,7 +95,7 @@ export default function UniversityDashboard() {
             onClick={() => {
               setActiveTab('manage');
               setIsEditing(false);
-              setScholarshipForm({ title: '', academicLevelRequired: 'Bachelor', deadline: '', requiredSkills: '' });
+            setScholarshipForm({ title: '', description: '', academicLevelRequired: 'Bachelor', deadline: '', minimumGPA: 0, requiredFieldOfStudy: 'Any', minimumYearsOfStudy: 0, nationality: 'Any', amount: 0, requiredSkills: '' });
             }}
             className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'manage' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
           >
@@ -97,7 +105,7 @@ export default function UniversityDashboard() {
             onClick={() => {
               setActiveTab('post');
               setIsEditing(false);
-              setScholarshipForm({ title: '', academicLevelRequired: 'Bachelor', deadline: '', requiredSkills: '' });
+              setScholarshipForm({ title: '', description: '', academicLevelRequired: 'Bachelor', deadline: '', minimumGPA: 0, requiredFieldOfStudy: 'Any', minimumYearsOfStudy: 0, nationality: 'Any', amount: 0, requiredSkills: '' });
             }}
             className={`px-5 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'post' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
           >
@@ -118,7 +126,16 @@ export default function UniversityDashboard() {
                 placeholder="e.g. Women in Code 2026 Foundation Grant"
               />
             </div>
-            
+
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Description</label>
+              <textarea
+                rows="3" value={scholarshipForm.description} onChange={e => setScholarshipForm({...scholarshipForm, description: e.target.value})}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all resize-none"
+                placeholder="Describe the scholarship purpose and goals..."
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">Degree Requirement</label>
@@ -126,6 +143,7 @@ export default function UniversityDashboard() {
                   required value={scholarshipForm.academicLevelRequired} onChange={e => setScholarshipForm({...scholarshipForm, academicLevelRequired: e.target.value})}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-white"
                 >
+                  <option value="All">All Levels</option>
                   <option value="High School">High School</option>
                   <option value="Bachelor">Bachelor</option>
                   <option value="Master">Master</option>
@@ -141,12 +159,65 @@ export default function UniversityDashboard() {
               </div>
             </div>
 
+            <div className="grid grid-cols-3 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Minimum GPA (0–4.0)</label>
+                <input 
+                  type="number" min="0" max="4" step="0.1" value={scholarshipForm.minimumGPA}
+                  onChange={e => setScholarshipForm({...scholarshipForm, minimumGPA: e.target.value})}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  placeholder="e.g. 3.0"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Min. Years of Study</label>
+                <input 
+                  type="number" min="0" value={scholarshipForm.minimumYearsOfStudy}
+                  onChange={e => setScholarshipForm({...scholarshipForm, minimumYearsOfStudy: e.target.value})}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  placeholder="e.g. 2"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Amount (USD)</label>
+                <input 
+                  type="number" min="0" value={scholarshipForm.amount}
+                  onChange={e => setScholarshipForm({...scholarshipForm, amount: e.target.value})}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  placeholder="e.g. 5000"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Required Field of Study</label>
+                <select
+                  value={scholarshipForm.requiredFieldOfStudy} onChange={e => setScholarshipForm({...scholarshipForm, requiredFieldOfStudy: e.target.value})}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all bg-white"
+                >
+                  {['Any','Computer Science','Engineering','Business','Medicine','Arts','Law','Education','Mathematics','Physics','Chemistry','Biology','Economics','Psychology','Architecture'].map(f => (
+                    <option key={f} value={f}>{f}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Nationality Eligibility</label>
+                <input 
+                  type="text" value={scholarshipForm.nationality}
+                  onChange={e => setScholarshipForm({...scholarshipForm, nationality: e.target.value})}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  placeholder="Any, Tunisian, International..."
+                />
+              </div>
+            </div>
+
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Target Skills/Fields (Comma sep)</label>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Required Skills / Tags (comma separated)</label>
               <input 
-                type="text" required value={scholarshipForm.requiredSkills} onChange={e => setScholarshipForm({...scholarshipForm, requiredSkills: e.target.value})}
+                type="text" value={scholarshipForm.requiredSkills} onChange={e => setScholarshipForm({...scholarshipForm, requiredSkills: e.target.value})}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-                placeholder="Computer Science, Machine Learning"
+                placeholder="Machine Learning, Data Analysis, Research"
               />
             </div>
 

@@ -6,7 +6,18 @@ const University = require('../models/University');
 // @access  Private (University)
 const createScholarship = async (req, res) => {
   try {
-    const { title, academicLevelRequired, deadline } = req.body;
+    const { 
+      title, 
+      description, 
+      academicLevelRequired, 
+      deadline, 
+      minimumGPA, 
+      requiredFieldOfStudy, 
+      minimumYearsOfStudy, 
+      nationality, 
+      amount, 
+      requiredSkills 
+    } = req.body;
 
     if (!title || !academicLevelRequired || !deadline) {
       return res
@@ -20,8 +31,15 @@ const createScholarship = async (req, res) => {
 
     const scholarship = await Scholarship.create({
       title,
+      description,
       academicLevelRequired,
       deadline,
+      minimumGPA,
+      requiredFieldOfStudy,
+      minimumYearsOfStudy,
+      nationality,
+      amount,
+      requiredSkills,
       university: req.user.id,
       status: 'pending',
     });

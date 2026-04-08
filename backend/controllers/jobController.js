@@ -6,7 +6,7 @@ const Company = require('../models/Company');
 // @access  Private (Company)
 const createJob = async (req, res) => {
   try {
-    const { title, description, requiredExperience } = req.body;
+    const { title, description, requiredExperience, requiredDegreeLevel, requiredSkills, location, salaryRange, jobType } = req.body;
 
     if (!title || !description) {
       return res.status(400).json({ message: 'Please provide title and description' });
@@ -20,6 +20,11 @@ const createJob = async (req, res) => {
       title,
       description,
       requiredExperience,
+      requiredDegreeLevel,
+      requiredSkills,
+      location,
+      salaryRange,
+      jobType,
       company: req.user.id,
       status: 'pending',
     });

@@ -65,9 +65,9 @@ const getRecommendedItems = async (profile, type) => {
 
   // Fetch from DB based on type
   let dbItems = [];
-  if (type === 'job') dbItems = await Job.find({ validated: true }).lean();
-  if (type === 'freelance') dbItems = await FreelanceProject.find({ validated: true }).lean();
-  if (type === 'scholarship') dbItems = await Scholarship.find({ validated: true }).lean();
+  if (type === 'job') dbItems = await Job.find({ status: 'validated' }).lean();
+  if (type === 'freelance') dbItems = await FreelanceProject.find({ status: 'validated' }).lean();
+  if (type === 'scholarship') dbItems = await Scholarship.find({ status: 'validated' }).lean();
 
   // If Gorse returned IDs, filter DB items and add dummy matchScore
   if (recommendedItemIds.length > 0) {

@@ -6,7 +6,7 @@ const Client = require('../models/Client');
 // @access  Private (Client)
 const createFreelanceProject = async (req, res) => {
   try {
-    const { title, description, difficulty } = req.body;
+    const { title, description, difficulty, requiredSkills, budget, timeline } = req.body;
 
     if (!title || !description) {
       return res.status(400).json({ message: 'Please provide title and description' });
@@ -20,6 +20,9 @@ const createFreelanceProject = async (req, res) => {
       title,
       description,
       difficulty,
+      requiredSkills,
+      budget,
+      timeline,
       client: req.user.id,
       status: 'pending',
     });

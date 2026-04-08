@@ -51,7 +51,8 @@ const updateProfile = async (req, res) => {
       phone, location, bio, avatar, cvFile, careerObjective,
       industry, companyName, companySize, website, foundedDate, 
       institutionType, programs, accreditation,
-      educations, skills, experiences
+      educations, skills, experiences,
+      gpa, fieldOfStudy, degreeLevel, yearsOfStudy
     } = req.body;
     
     // Find or create profile
@@ -67,6 +68,12 @@ const updateProfile = async (req, res) => {
     profile.avatar = avatar || profile.avatar;
     profile.cvFile = cvFile || profile.cvFile;
     profile.careerObjective = careerObjective || profile.careerObjective;
+
+    // Update Academic Details (for scholarship eligibility)
+    profile.gpa = gpa !== undefined ? gpa : profile.gpa;
+    profile.fieldOfStudy = fieldOfStudy || profile.fieldOfStudy;
+    profile.degreeLevel = degreeLevel || profile.degreeLevel;
+    profile.yearsOfStudy = yearsOfStudy !== undefined ? yearsOfStudy : profile.yearsOfStudy;
 
     // Update Company/Client specific fields
     profile.industry = industry || profile.industry;

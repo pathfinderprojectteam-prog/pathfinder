@@ -98,6 +98,7 @@ const sendMessage = async (req, res) => {
     // Broadcast message via Socket.io
     const io = req.app.get('io');
     if (io) {
+      console.log(`📡 Emitting message from ${req.user.name} to room ${conversationId}`);
       io.to(conversationId).emit('receive_message', message);
     }
 
@@ -130,7 +131,8 @@ const getConversationMessages = async (req, res) => {
     }
 
     // Ensure the user is a participant
-    if (!conversation.participants.includes(req.user.id)) {
+    const isParticipant = conversation.participants.some(p => p.toString() === req.user.id.toString());
+    if (!isParticipant) {
       return res.status(403).json({ message: 'You are not a participant in this conversation.' });
     }
 

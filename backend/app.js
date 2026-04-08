@@ -24,6 +24,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/profile', require('./routes/profileRoutes'));
 app.use('/api/jobs', require('./routes/jobRoutes'));
 app.use('/api/freelance-projects', require('./routes/freelanceProjectRoutes'));
@@ -38,6 +39,8 @@ app.use('/api/upload', require('./routes/uploadRoutes'));
 app.use('/api/network', require('./routes/networkRoutes'));
 
 
+
+app.get('/ping', (req, res) => res.send('pong'));
 
 app.get('/', (req, res) => {
   res.status(200).json({

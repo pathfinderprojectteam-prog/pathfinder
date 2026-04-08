@@ -1,9 +1,6 @@
+require('dotenv').config();
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
 const bcrypt = require('bcrypt');
-
-// Load environment variables
-dotenv.config();
 
 // Models
 const User = require('./models/User');
@@ -24,7 +21,7 @@ const Application = require('./models/Application');
 const seedDatabase = async () => {
   try {
     console.log('🌱 Connecting to database...');
-    await mongoose.connect(process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/pathfinder');
+    await mongoose.connect(process.env.MONGODB_URI);
     console.log('✅ Connected to MongoDB.');
 
     console.log('🧹 Wiping existing data...');
@@ -161,14 +158,14 @@ const seedDatabase = async () => {
         description: `Join our core platform team in Tunis to scale our microservices. Minimum 2 years Node.js experience required. Remote optional.`,
         requiredExperience: 2,
         company: company._id,
-        validated: true
+        status: 'validated'
       });
       jobsToCreate.push({
         title: 'Frontend React Developer',
         description: `Looking for a UI developer specialized in React and Tailwind for a fintech dashboard project based in Sousse.`,
         requiredExperience: 1,
         company: company._id,
-        validated: true
+        status: 'validated'
       });
     });
     const createdJobs = await Job.insertMany(jobsToCreate);
@@ -183,14 +180,14 @@ const seedDatabase = async () => {
         description: `Need a React Native developer to build a delivery app MVP targeting the Sfax market. API is already built.`,
         difficulty: 'Intermediate',
         client: client._id,
-        validated: true
+        status: 'validated'
       });
       projectsToCreate.push({
         title: 'Landing Page for Startup',
         description: `Simple HTML/TailwindCSS SaaS landing page. Looking for clean design. Based in Tunis.`,
         difficulty: 'Beginner',
         client: client._id,
-        validated: true
+        status: 'validated'
       });
     });
     const createdProjects = await FreelanceProject.insertMany(projectsToCreate);
@@ -206,7 +203,7 @@ const seedDatabase = async () => {
         deadline: new Date('2026-12-31'),
         academicLevelRequired: 'Master',
         university: uni._id,
-        validated: true
+        status: 'validated'
       });
       scholarshipsToCreate.push({
         title: 'International Exchange Grant',
@@ -215,7 +212,7 @@ const seedDatabase = async () => {
         deadline: new Date('2026-10-15'),
         academicLevelRequired: 'Bachelor',
         university: uni._id,
-        validated: true
+        status: 'validated'
       });
     });
     // Remove the last one to make it 5 total
@@ -228,6 +225,7 @@ const seedDatabase = async () => {
         await Application.create({
             student: createdStudents[i]._id,
             job: createdJobs[i]._id,
+            type: 'job',
             status: 'pending'
         });
     }

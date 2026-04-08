@@ -11,18 +11,24 @@ const calculateProfileCompletion = (profile) => {
     completion += 15;
   }
 
-  // 2. Education (20%)
+  // 2. Education (15%)
   // Degree name, Field of study, Institution name, Year of graduation, GPA (optional)
   if (profile.educations && profile.educations.length > 0) {
     const hasValidEd = profile.educations.some(ed => ed.degree && ed.field && ed.institution && ed.yearOfGraduation);
-    if (hasValidEd) completion += 20;
+    if (hasValidEd) completion += 15;
   }
 
-  // 3. Skills (25%)
+  // 2.5 Academic Details (10%) - Required for Scholarship Eligibility
+  const hasAcademic = !!(profile.gpa !== undefined && profile.fieldOfStudy && profile.degreeLevel && profile.yearsOfStudy !== undefined);
+  if (hasAcademic) {
+    completion += 10;
+  }
+
+  // 3. Skills (20%)
   // Skill name, Proficiency level, Years of experience
   if (profile.skills && profile.skills.length > 0) {
     const hasValidSkill = profile.skills.some(sk => sk.name && sk.level && sk.yearsExperience !== undefined);
-    if (hasValidSkill) completion += 25;
+    if (hasValidSkill) completion += 20;
   }
 
   // 4. Experience (25%)

@@ -22,7 +22,7 @@ const protect = async (req, res, next) => {
       }
 
       // Attach user object to request
-      req.user = { id: user._id, role: user.role };
+      req.user = { id: user._id, role: user.role, name: user.name, email: user.email };
 
       next();
     } catch (error) {

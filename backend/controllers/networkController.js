@@ -150,6 +150,33 @@ const getFollowing = async (req, res) => {
   }
 };
 
+// @desc    Search users by name or email
+// @route   GET /api/network/search?q=query
+// @access  Private
+const searchUsers = async (req, res) => {
+  try {
+    const { q } = req.query;
+    if (!q) return res.json([]);
+    
+    // Find users by name or email, exclude current user
+    const users = await User.find({
+      $and: [
+        { _id: { $ne: req.user.id } },
+        {
+          $or: [
+            { name: { $regex: q, $options: 'i' } },
+            { email: { $regex: q, $options: 'i' } }
+          ]
+        }
+      ]
+    }).select('name email avatar role').limit(10);
+    
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getFeed,
   createPost,
@@ -159,4 +186,5 @@ module.exports = {
   unfollowUser,
   getNetworkStats,
   getFollowing,
+  searchUsers,
 };

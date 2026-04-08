@@ -15,7 +15,8 @@ export default function OpportunityCard({ opportunity, type }) {
       }
       alert("Application submitted successfully! Track it in the Applications tab.");
     } catch (err) {
-      alert("Error applying. You might have already applied or missing critical profile items.");
+      const msg = err?.response?.data?.message || 'Error applying. Please try again.';
+      alert(msg);
       console.error(err);
     }
   };

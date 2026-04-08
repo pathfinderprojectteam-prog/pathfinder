@@ -43,7 +43,7 @@ export default function Applications() {
                 <tr key={app._id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-5">
                     <div className="font-bold text-slate-900 border-b border-dashed border-slate-300 w-fit pb-1">
-                      {app.job?.title || 'Unknown Position'}
+                      {app.job?.title || app.freelanceProject?.title || app.scholarship?.title || 'Unknown Position'}
                     </div>
                   </td>
                   <td className="px-6 py-5">

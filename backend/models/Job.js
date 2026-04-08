@@ -12,6 +12,12 @@ const jobSchema = new mongoose.Schema(
     },
     requiredExperience: {
       type: Number,
+      default: 0,
+    },
+    requiredDegreeLevel: {
+      type: String,
+      enum: ['Any', 'High School', 'Bachelor', 'Master', 'PhD'],
+      default: 'Any',
     },
     requiredSkills: [
       {

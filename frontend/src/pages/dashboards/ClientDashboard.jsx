@@ -9,7 +9,7 @@ export default function ClientDashboard() {
   const [loading, setLoading] = useState(true);
 
   const [projectForm, setProjectForm] = useState({
-    title: '', description: '', difficulty: 'Beginner', requiredSkills: ''
+    title: '', description: '', difficulty: 'Beginner', requiredSkills: '', budget: 0, timeline: ''
   });
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
@@ -46,7 +46,7 @@ export default function ClientDashboard() {
         alert('Freelance project posted pending admin validation!');
       }
 
-      setProjectForm({ title: '', description: '', difficulty: 'Beginner', requiredSkills: '' });
+      setProjectForm({ title: '', description: '', difficulty: 'Beginner', requiredSkills: '', budget: 0, timeline: '' });
       setIsEditing(false);
       setEditId(null);
       setActiveTab('manage');
@@ -62,7 +62,9 @@ export default function ClientDashboard() {
       title: project.title,
       description: project.description,
       difficulty: project.difficulty,
-      requiredSkills: Array.isArray(project.requiredSkills) ? project.requiredSkills.join(', ') : project.requiredSkills
+      requiredSkills: Array.isArray(project.requiredSkills) ? project.requiredSkills.join(', ') : project.requiredSkills,
+      budget: project.budget || 0,
+      timeline: project.timeline || ''
     });
     setEditId(project._id);
     setIsEditing(true);
@@ -144,6 +146,26 @@ export default function ClientDashboard() {
                   type="text" required value={projectForm.requiredSkills} onChange={e => setProjectForm({...projectForm, requiredSkills: e.target.value})}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                   placeholder="Vue, Figma, SEO"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Budget (USD)</label>
+                <input 
+                  type="number" min="0" value={projectForm.budget}
+                  onChange={e => setProjectForm({...projectForm, budget: e.target.value})}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  placeholder="e.g. 500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Timeline / Duration</label>
+                <input 
+                  type="text" value={projectForm.timeline}
+                  onChange={e => setProjectForm({...projectForm, timeline: e.target.value})}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                  placeholder="e.g. 2 weeks, 1 month"
                 />
               </div>
             </div>

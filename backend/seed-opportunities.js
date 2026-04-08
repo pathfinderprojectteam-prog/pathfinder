@@ -52,23 +52,23 @@ async function seedAndTest() {
 
     // 3. Seed Jobs
     await Job.insertMany([
-      { title: 'Frontend Developer', description: 'React and JS experts', requiredExperience: 2, requiredSkills: ['React', 'JavaScript'], company: company._id, validated: true },
-      { title: 'Backend Developer', description: 'Node.js and Python API', requiredExperience: 3, requiredSkills: ['Nodejs', 'Python'], company: company._id, validated: true },
-      { title: 'Data Scientist', description: 'Python Expert', requiredExperience: 1, requiredSkills: ['Python'], company: company._id, validated: true }
+      { title: 'Frontend Developer', description: 'React and JS experts', requiredExperience: 2, requiredSkills: ['React', 'JavaScript'], company: company._id, status: 'validated' },
+      { title: 'Backend Developer', description: 'Node.js and Python API', requiredExperience: 3, requiredSkills: ['Nodejs', 'Python'], company: company._id, status: 'validated' },
+      { title: 'Data Scientist', description: 'Python Expert', requiredExperience: 1, requiredSkills: ['Python'], company: company._id, status: 'validated' }
     ]);
     console.log("✅ Seeded 3 test Jobs");
 
     // 4. Seed Freelance
     await FreelanceProject.insertMany([
-      { title: 'Build React Dashboard', description: 'Urgent task', difficulty: 'Intermediate', requiredSkills: ['React', 'JavaScript'], client: client._id, validated: true },
-      { title: 'Script Python Automator', description: 'Quick script', difficulty: 'Beginner', requiredSkills: ['Python'], client: client._id, validated: true }
+      { title: 'Build React Dashboard', description: 'Urgent task', difficulty: 'Intermediate', requiredSkills: ['React', 'JavaScript'], client: client._id, status: 'validated' },
+      { title: 'Script Python Automator', description: 'Quick script', difficulty: 'Beginner', requiredSkills: ['Python'], client: client._id, status: 'validated' }
     ]);
     console.log("✅ Seeded 2 test Freelance Projects");
 
     // 5. Seed Scholarships
     await Scholarship.insertMany([
-      { title: 'Global Tech Grant', academicLevelRequired: 'Bachelor', deadline: new Date('2026-12-31'), requiredSkills: ['Computer Science'], university: university._id, validated: true },
-      { title: 'Women in Code Scholarship', academicLevelRequired: 'Bachelor', deadline: new Date('2026-12-31'), requiredSkills: ['Tech'], university: university._id, validated: true }
+      { title: 'Global Tech Grant', academicLevelRequired: 'Bachelor', deadline: new Date('2026-12-31'), requiredSkills: ['Computer Science'], university: university._id, status: 'validated' },
+      { title: 'Women in Code Scholarship', academicLevelRequired: 'Bachelor', deadline: new Date('2026-12-31'), requiredSkills: ['Tech'], university: university._id, status: 'validated' }
     ]);
     console.log("✅ Seeded 2 test Scholarships");
 

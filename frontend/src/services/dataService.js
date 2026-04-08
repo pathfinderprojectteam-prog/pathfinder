@@ -23,7 +23,7 @@ export const dataService = {
 
   // --- Messaging ---
   getConversations: () => api.get('/api/conversations'),
-  getMessages: (conversationId) => api.get(`/api/conversations/${conversationId}/messages`),
+  getMessages: (conversationId) => api.get(`/api/messages/${conversationId}`),
   sendMessage: (conversationId, content) => api.post('/api/messages', { conversationId, content }),
   createConversation: (recipientId) => api.post('/api/conversations', { recipientId }),
   markConversationRead: (conversationId) => api.put(`/api/conversations/${conversationId}/read`),
@@ -88,6 +88,18 @@ export const dataService = {
     return api.post(`/api/admin/request-changes/${slug}/${id}`, { feedback });
   },
 
+  // --- Admin: User Management ---
+  getAdminUsers: async (params) => {
+    const token = localStorage.getItem('token');
+    const response = await api.get('/api/admin/users', { 
+      params,
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return response.data;
+  },
+  toggleUserStatus: (id) => api.put(`/api/admin/users/${id}/status`),
+  deleteUser: (id) => api.delete(`/api/admin/users/${id}`),
+
   // --- Professional Network ---
   getNetworkFeed: () => api.get('/api/network/feed'),
   createPost: (content, tags = []) => api.post('/api/network/posts', { content, tags }),
@@ -97,6 +109,7 @@ export const dataService = {
   unfollowUser: (userId) => api.delete(`/api/network/follow/${userId}`),
   getNetworkStats: () => api.get('/api/network/stats'),
   getFollowing: () => api.get('/api/network/following'),
+  searchUsers: (query) => api.get(`/api/users/search?q=${query}`),
 
   // --- File Upload ---
   uploadFile: (formData) => api.post('/api/upload', formData, {

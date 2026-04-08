@@ -3,6 +3,7 @@ const Job = require('../models/Job');
 const FreelanceProject = require('../models/FreelanceProject');
 const Scholarship = require('../models/Scholarship');
 const Notification = require('../models/Notification');
+const Profile = require('../models/Profile');
 
 // @desc    Apply to a job, project or scholarship
 // @route   POST /api/applications/:type/:id
@@ -37,8 +38,8 @@ const applyToOpportunity = async (req, res) => {
       return res.status(404).json({ message: `${type} not found` });
     }
 
-    if (!opportunity.validated) {
-      return res.status(400).json({ message: `This ${type} is not available for applications` });
+    if (opportunity.status !== 'validated') {
+      return res.status(400).json({ message: `This ${type} is not yet approved and not available for applications` });
     }
 
     // Check for duplicate application
@@ -48,6 +49,54 @@ const applyToOpportunity = async (req, res) => {
 
     if (alreadyApplied) {
       return res.status(400).json({ message: `You have already applied to this ${type}` });
+    }
+
+    // --- Scholarship Eligibility Check ---
+    if (type === 'scholarship') {
+      const profile = await Profile.findOne({ user: req.user.id });
+
+      if (!profile) {
+        return res.status(400).json({ message: 'You must complete your profile before applying to scholarships' });
+      }
+
+      // GPA Check
+      if (opportunity.minimumGPA && opportunity.minimumGPA > 0) {
+        if (!profile.gpa && profile.gpa !== 0) {
+          return res.status(400).json({ message: `This scholarship requires a minimum GPA of ${opportunity.minimumGPA}. Please add your GPA to your profile first.` });
+        }
+        if (profile.gpa < opportunity.minimumGPA) {
+          return res.status(400).json({ message: `Minimum GPA of ${opportunity.minimumGPA} required (your GPA: ${profile.gpa})` });
+        }
+      }
+
+      // Field of Study Check
+      if (opportunity.requiredFieldOfStudy && opportunity.requiredFieldOfStudy !== 'Any') {
+        if (!profile.fieldOfStudy) {
+          return res.status(400).json({ message: `This scholarship requires a ${opportunity.requiredFieldOfStudy} degree. Please add your field of study to your profile.` });
+        }
+        const reqField = opportunity.requiredFieldOfStudy.toLowerCase();
+        const studentField = profile.fieldOfStudy.toLowerCase();
+        if (!studentField.includes(reqField) && !reqField.includes(studentField)) {
+          return res.status(400).json({ message: `This scholarship requires a ${opportunity.requiredFieldOfStudy} degree (your field: ${profile.fieldOfStudy})` });
+        }
+      }
+
+      // Degree Level Check
+      if (opportunity.academicLevelRequired && opportunity.academicLevelRequired !== 'All') {
+        if (profile.degreeLevel && profile.degreeLevel !== opportunity.academicLevelRequired) {
+          return res.status(400).json({ message: `This scholarship is for ${opportunity.academicLevelRequired} students (your level: ${profile.degreeLevel})` });
+        }
+      }
+
+      // Years of Study Check
+      if (opportunity.minimumYearsOfStudy && opportunity.minimumYearsOfStudy > 0) {
+        if (!profile.yearsOfStudy && profile.yearsOfStudy !== 0) {
+          return res.status(400).json({ message: `This scholarship requires at least ${opportunity.minimumYearsOfStudy} years of study completed. Please update your profile.` });
+        }
+        if (profile.yearsOfStudy < opportunity.minimumYearsOfStudy) {
+          return res.status(400).json({ message: `Minimum ${opportunity.minimumYearsOfStudy} years of study required (you have: ${profile.yearsOfStudy})` });
+        }
+      }
     }
 
     const applicationData = {

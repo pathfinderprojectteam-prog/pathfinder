@@ -53,6 +53,23 @@ const profileSchema = new mongoose.Schema(
     availability: {
       type: String,
     },
+    // --- Student Academic Info ---
+    gpa: {
+      type: Number,
+      min: 0,
+      max: 4,
+    },
+    fieldOfStudy: {
+      type: String,
+    },
+    degreeLevel: {
+      type: String,
+      enum: ['High School', 'Bachelor', 'Master', 'PhD'],
+    },
+    yearsOfStudy: {
+      type: Number,
+      min: 0,
+    },
     
     // --- Company & Client Specific ---
     industry: {
